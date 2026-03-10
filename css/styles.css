@@ -1,0 +1,58 @@
+body {
+    background-color: #f8f9fa;
+}
+
+.header-section {
+    background: linear-gradient(130deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+}
+
+.stats-card {
+    border-radius: 10px;
+    transition: transform 0.3s ease;
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+}
+
+.buy-section { background-color: #d4edda; }
+.hold-section { background-color: #fff3cd; }
+.sell-section { background-color: #f8d7da; }
+
+.stars {
+    color: #ffc107;
+    font-size: 1.2rem;
+}
+
+.price-up {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.price-down {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.loading-spinner {
+    display: none;
+    text-align: center;
+    padding: 2rem;
+}
+
+table th {
+    cursor: pointer;
+    user-select: none;
+}
+
+table th:hover {
+    background-color: #e9ecef;
+}
+
+.sort-indicator {
+    font-size: 0.8rem;
+    margin-left: 5px;
+}

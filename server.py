@@ -441,6 +441,42 @@ def serve_frontend():
         }), 500
 
 
+@app.route('/css/<path:filename>')
+def serve_css(filename):
+    """
+    Serve CSS files from the css/ directory.
+    GET /css/{filename}
+    
+    This allows users to access stylesheets at http://localhost:5000/css/styles.css
+    """
+    try:
+        return send_file(f'css/{filename}', mimetype='text/css')
+    except Exception as e:
+        print(f"Error serving CSS {filename}: {e}")
+        return jsonify({
+            'error': 'CSS file not available',
+            'message': str(e)
+        }), 404
+
+
+@app.route('/js/<path:filename>')
+def serve_js(filename):
+    """
+    Serve JavaScript files from the js/ directory.
+    GET /js/{filename}
+    
+    This allows users to access scripts at http://localhost:5000/js/app.js
+    """
+    try:
+        return send_file(f'js/{filename}', mimetype='application/javascript')
+    except Exception as e:
+        print(f"Error serving JS {filename}: {e}")
+        return jsonify({
+            'error': 'JavaScript file not available',
+            'message': str(e)
+        }), 404
+
+
 # ============================================================================
 # MAIN
 # ============================================================================
