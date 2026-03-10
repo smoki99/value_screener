@@ -33,6 +33,53 @@ cached_data = None
 cache_timestamp = None
 
 
+def convert_percentages_to_whole_numbers(stock_data):
+    """
+    Convert decimal percentages (0.50) to whole numbers (50).
+    Applied in-place for efficiency.
+    
+    Args:
+        stock_data: List of stock dictionaries
+        
+    Returns:
+        Modified list with percentage values as whole numbers
+    """
+    for stock in stock_data:
+        # GP/A - Gross Profit / Assets (percentage)
+        if 'gp_a' in stock and stock['gp_a'] is not None:
+            stock['gp_a'] = round(stock['gp_a'] * 100, 2)
+        
+        # GM - Gross Margin (percentage)
+        if 'gross_margin' in stock and stock['gross_margin'] is not None:
+            stock['gross_margin'] = round(stock['gross_margin'] * 100, 2)
+        
+        # Profit Margin (percentage)
+        if 'profit_margin' in stock and stock['profit_margin'] is not None:
+            stock['profit_margin'] = round(stock['profit_margin'] * 100, 2)
+        
+        # ROE - Return on Equity (percentage)
+        if 'roe' in stock and stock['roe'] is not None:
+            stock['roe'] = round(stock['roe'] * 100, 2)
+        
+        # Growth Rate (percentage)
+        if 'growth_rate' in stock and stock['growth_rate'] is not None:
+            stock['growth_rate'] = round(stock['growth_rate'] * 100, 2)
+        
+        # Asset Growth (percentage)
+        if 'asset_growth' in stock and stock['asset_growth'] is not None:
+            stock['asset_growth'] = round(stock['asset_growth'] * 100, 2)
+        
+        # Performance 6M (percentage)
+        if 'perf_6m' in stock and stock['perf_6m'] is not None:
+            stock['perf_6m'] = round(stock['perf_6m'] * 100, 2)
+        
+        # Performance 12M (percentage)
+        if 'perf_12m' in stock and stock['perf_12m'] is not None:
+            stock['perf_12m'] = round(stock['perf_12m'] * 100, 2)
+    
+    return stock_data
+
+
 def sanitize_for_json(obj):
     """
     Recursively convert NaN/Inf values to None for JSON serialization.
@@ -192,8 +239,11 @@ def get_all_stocks():
             'message': 'Analysis has not been run yet or failed'
         }), 404
     
+    # Convert percentages to whole numbers (0.50 -> 50)
+    converted_data = convert_percentages_to_whole_numbers(cached_data.copy())
+    
     # Sanitize NaN/Inf values for JSON serialization
-    sanitized_data = sanitize_for_json(cached_data)
+    sanitized_data = sanitize_for_json(converted_data)
     
     return jsonify({
         'data': sanitized_data,
@@ -221,8 +271,11 @@ def get_buy_recommendations():
     # Filter stocks with 4-5 stars
     buy_stocks = [stock for stock in cached_data if stock.get('stars', 0) >= 4]
     
+    # Convert percentages to whole numbers (0.50 -> 50)
+    converted_buy_stocks = convert_percentages_to_whole_numbers(buy_stocks.copy())
+    
     # Sanitize NaN/Inf values for JSON serialization
-    sanitized_buy_stocks = sanitize_for_json(buy_stocks)
+    sanitized_buy_stocks = sanitize_for_json(converted_buy_stocks)
     
     return jsonify({
         'data': sanitized_buy_stocks,
@@ -250,8 +303,11 @@ def get_hold_recommendations():
     # Filter stocks with exactly 3 stars
     hold_stocks = [stock for stock in cached_data if stock.get('stars', 0) == 3]
     
+    # Convert percentages to whole numbers (0.50 -> 50)
+    converted_hold_stocks = convert_percentages_to_whole_numbers(hold_stocks.copy())
+    
     # Sanitize NaN/Inf values for JSON serialization
-    sanitized_hold_stocks = sanitize_for_json(hold_stocks)
+    sanitized_hold_stocks = sanitize_for_json(converted_hold_stocks)
     
     return jsonify({
         'data': sanitized_hold_stocks,
@@ -279,8 +335,11 @@ def get_sell_avoidance():
     # Filter stocks with 0-2 stars
     sell_stocks = [stock for stock in cached_data if stock.get('stars', 0) <= 2]
     
+    # Convert percentages to whole numbers (0.50 -> 50)
+    converted_sell_stocks = convert_percentages_to_whole_numbers(sell_stocks.copy())
+    
     # Sanitize NaN/Inf values for JSON serialization
-    sanitized_sell_stocks = sanitize_for_json(sell_stocks)
+    sanitized_sell_stocks = sanitize_for_json(converted_sell_stocks)
     
     return jsonify({
         'data': sanitized_sell_stocks,
@@ -315,8 +374,11 @@ def get_stock_by_symbol(symbol):
             'message': f'No data available for {symbol}'
         }), 404
     
+    # Convert percentages to whole numbers (0.50 -> 50)
+    converted_stock = convert_percentages_to_whole_numbers([stock.copy()])[0]
+    
     return jsonify({
-        'data': stock,
+        'data': converted_stock,
         'last_update': cache_timestamp
     })
 
