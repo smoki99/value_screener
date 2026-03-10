@@ -8,27 +8,32 @@ import pandas as pd
 from typing import Any
 
 
-def get_star_rating(peg: float | None) -> int:
-    """Get star rating based on PEG ratio.
+def get_star_rating(value: float | None, thresholds: list[float], reverse: bool = False,
+                    penalize_negative: bool = False) -> int:
+    """Get star rating based on value and thresholds.
     
     Args:
-        peg: PEG ratio value (lower is better)
+        value: The metric value to rate
+        thresholds: List of threshold values for each star level (4 thresholds for 5 stars)
+        reverse: If True, lower values are better (e.g., P/B ratio)
+        penalize_negative: If True, negative values get minimum rating
         
     Returns:
         Star rating 1-5, or 0 if not calculable
     """
-    if peg is None:
+    if value is None or pd.isna(value):
         return 0
-    if peg <= 0.75:
-        return 5
-    elif peg <= 1.0:
-        return 4
-    elif peg <= 1.25:
-        return 3
-    elif peg <= 1.5:
-        return 2
-    else:
+    if penalize_negative and value < 0:
         return 1
+    stars = 1
+    for t in thresholds:
+        if not reverse:
+            if value >= t:
+                stars += 1
+        else:
+            if value <= t:
+                stars += 1
+    return min(stars, 5)
 
 
 def score_novy_marx(
@@ -55,35 +60,35 @@ def score_novy_marx(
     from .fetcher import calculate_asset_growth
     
     try:
-        # Gross margin
+        # Gross margin - relaxed threshold to 20%
         gm = info.get('grossMargins')
-        if not gm or gm <= 0.30:
+        if not gm or gm <= 0.20:
             return 0
         
-        # GP/A (Gross Profit / Assets)
+        # GP/A (Gross Profit / Assets) - relaxed threshold to 5%
         gpa = info.get('profitMargins')
-        if not gpa or gpa <= 0.15:
+        if not gpa or gpa <= 0.05:
             return 0
         
-        # ROE
+        # ROE - relaxed threshold to 10% (was 20%)
         roe = info.get('returnOnEquity')
-        if not roe or roe < 0.20:
+        if not roe or roe < 0.10:
             return 0
         
-        # P/B (lower is better)
+        # P/B (lower is better) - increased limit to 30
         pb = info.get('priceToBook')
-        if pb and pb > 15.0:
+        if pb and pb > 30.0:
             return 0
         
-        # Asset growth control factor
+        # Asset growth control factor - relaxed threshold to 50%
         asset_growth = calculate_asset_growth(balance_sheet)
-        if asset_growth and asset_growth > 0.25:
+        if asset_growth and asset_growth > 0.50:
             return 0
         
-        # All criteria met - assign score based on PEG
+        # All criteria met - assign score based on PEG (relaxed to 2.0)
         from .metrics import get_peg_values
         gaap_peg, _ = get_peg_values(info, financials)
-        if gaap_peg and gaap_peg <= 1.5:
+        if gaap_peg and gaap_peg <= 2.0:
             return 20
         
     except (KeyError, TypeError):
@@ -143,6 +148,93 @@ def score_multi_factor(
         pass
     
     return 0
+
+
+def score_novy_marx_weighted(s_gpa: int, s_pb: int, s_momentum: int) -> float:
+    """Calculate Novy-Marx score using star ratings.
+    
+    Args:
+        s_gpa: GP/A star rating (1-5)
+        s_pb: P/B star rating (1-5)
+        s_momentum: Momentum star rating (1-5)
+        
+    Returns:
+        Weighted score 0-4.0
+    """
+    weights = {
+        'gpa': (s_gpa, 0.40),
+        'pb': (s_pb, 0.35),
+        'momentum': (s_momentum, 0.25)
+    }
+    active = {k: (score, w) for k, (score, w) in weights.items() if score > 0}
+    if len(active) < 2:
+        return 0
+    total_weight = sum(w for _, w in active.values())
+    weighted_sum = sum(score * (w / total_weight) for score, w in active.values())
+    
+    # Penalties
+    if s_pb == 1:
+        weighted_sum = min(weighted_sum, 3.0)
+    missing = 3 - len(active)
+    weighted_sum -= missing * 0.15
+    return round(max(weighted_sum, 0), 1)
+
+
+def score_multi_factor_weighted(s_gpa: int, s_roe: int, s_pb: int, s_fpeg: int, s_momentum: int) -> float:
+    """Calculate multi-factor score using star ratings.
+    
+    Args:
+        s_gpa: GP/A star rating (1-5)
+        s_roe: ROE star rating (1-5)
+        s_pb: P/B star rating (1-5)
+        s_fpeg: Forward PEG star rating (1-5)
+        s_momentum: Momentum star rating (1-5)
+        
+    Returns:
+        Weighted score 0-4.0
+    """
+    weights = {
+        'gpa': (s_gpa, 0.25),
+        'roe': (s_roe, 0.20),
+        'pb': (s_pb, 0.20),
+        'peg': (s_fpeg, 0.15),
+        'momentum': (s_momentum, 0.20)
+    }
+    active = {k: (score, w) for k, (score, w) in weights.items() if score > 0}
+    if len(active) < 2:
+        return 0
+    total_weight = sum(w for _, w in active.values())
+    weighted_sum = sum(score * (w / total_weight) for score, w in active.values())
+    
+    # Penalties
+    if s_pb == 1:
+        weighted_sum = min(weighted_sum, 3.0)
+    if s_fpeg == 1 and s_gpa <= 3:
+        weighted_sum = min(weighted_sum, 3.0)
+    missing = 5 - len(active)
+    weighted_sum -= missing * 0.15
+    return round(max(weighted_sum, 0), 1)
+
+
+def get_quality_rating(nm_score: float, mf_score: float) -> str:
+    """Get quality rating based on best(NM, MF) score.
+    
+    Args:
+        nm_score: Novy-Marx weighted score
+        mf_score: Multi-factor weighted score
+        
+    Returns:
+        Quality rating string (★★★, ★★, ★, or —)
+    """
+    best = max(nm_score, mf_score)
+    if best >= 4.5:
+        return "★★★"
+    elif best >= 3.5:
+        return "★★"
+    elif best >= 2.5:
+        return "★"
+    else:
+        return "—"
 
 
 def stars_str(rating: int) -> str:

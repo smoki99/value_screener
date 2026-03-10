@@ -31,20 +31,26 @@ def build_unified_row(
     Returns:
         Dictionary with all stock data in unified format
     """
-    from .metrics import compute_metrics, get_peg_values
+    from .metrics import compute_metrics, get_peg_values, calculate_forward_peg
     from .scoring import score_novy_marx, score_multi_factor, get_star_rating
     from .fetcher import calculate_asset_growth
     
     # Compute metrics
     metrics = compute_metrics(info, financials, balance_sheet, perf_6m, perf_12m, growth_estimates)
-    gaap_peg, forward_peg = get_peg_values(info, financials)
+    gaap_peg, forward_peg_legacy = get_peg_values(info, financials)
+    
+    # Calculate forward PEG using growth_rate from estimates (more accurate than earningsGrowth)
+    growth_rate = metrics['growth_rate']
+    forward_peg = calculate_forward_peg(info, growth_rate) if growth_rate else forward_peg_legacy
     
     # Calculate scores
     nm_score = score_novy_marx(info, financials, balance_sheet, perf_6m, perf_12m, growth_estimates)
     mf_score = score_multi_factor(info, financials, balance_sheet, perf_6m, perf_12m, growth_estimates)
     
-    # Get star rating
-    star_rating = get_star_rating(gaap_peg)
+    # Get star rating - prefer forward_peg if available (more forward-looking)
+    # PEG thresholds: <=0.5=5★, <=1.0=4★, <=1.5=3★, <=2.0=2★, >2.0=1★
+    peg_for_rating = forward_peg if forward_peg is not None else gaap_peg
+    star_rating = get_star_rating(peg_for_rating, [0.5, 1.0, 1.5, 2.0], reverse=True)
     
     return {
         'symbol': symbol,

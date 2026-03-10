@@ -87,3 +87,6 @@ websockets==16.0
 widgetsnbextension==4.0.15
 xyzservices==2025.11.0
 yfinance==1.2.0
+flask>=3.0.0
+apscheduler>=3.10.0
+flask-cors>=4.0.0

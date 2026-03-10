@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NASDAQ-100 Screener</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .header-section {
+            background: linear-gradient(130deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+        .stats-card {
+            border-radius: 10px;
+            transition: transform 0.3s ease;
+        }
+        .stats-card:hover {
+            transform: translateY(-5px);
+        }
+        .buy-section { background-color: #d4edda; }
+        .hold-section { background-color: #fff3cd; }
+        .sell-section { background-color: #f8d7da; }
+        .stars {
+            color: #ffc107;
+            font-size: 1.2rem;
+        }
+        .price-up {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .price-down {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+        table th {
+            cursor: pointer;
+            user-select: none;
+        }
+        table th:hover {
+            background-color: #e9ecef;
+        }
+        .sort-indicator {
+            font-size: 0.8rem;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Header Section -->
+<div class="header-section">
+    <div class="container">
+        <h1>📊 NASDAQ-100 Screener</h1>
+        <p class="lead">Real-time stock analysis with Novy-Marx multi-factor scoring</p>
+        <button id="refreshBtn" class="btn btn-light btn-sm mt-2">
+            🔄 Refresh Data
+        </button>
+    </div>
+</div>
+
+<!-- Loading Spinner -->
+<div id="loadingSpinner" class="loading-spinner">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="mt-2">Fetching latest data from server...</p>
+</div>
+
+<!-- Main Content -->
+<div id="mainContent" class="container">
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card stats-card buy-section h-100">
+                <div class="card-body text-center">
+                    <h5>📈 Buy Recommendations</h5>
+                    <h2 id="buyCount">-</h2>
+                    <small>4-5 Star Stocks</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stats-card hold-section h-100">
+                <div class="card-body text-center">
+                    <h5>⏳ Hold Recommendations</h5>
+                    <h2 id="holdCount">-</h2>
+                    <small>3 Star Stocks</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stats-card sell-section h-100">
+                <div class="card-body text-center">
+                    <h5>📉 Sell Avoidance</h5>
+                    <h2 id="sellCount">-</h2>
+                    <small>0-2 Star Stocks</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <h5>📊 Total Stocks</h5>
+                    <h2 id="totalCount">-</h2>
+                    <small>Last Updated: <span id="lastUpdate">-</span></small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs" id="stockTabs">
+        <li class="nav-item">
+            <a class="nav-link active" data-bs-toggle="tab" href="#buyTab">Buy Recommendations (4-5★)</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#holdTab">Hold Recommendations (3★)</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#sellTab">Sell Avoidance (0-2★)</a>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content mt-3">
+        <!-- Buy Recommendations Tab -->
+        <div class="tab-pane fade show active" id="buyTab">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th onclick="sortTable('symbol')">Symbol <span class="sort-indicator">↕</span></th>
+                            <th>Company Name</th>
+                            <th onclick="sortTable('stars')">Stars <span class="sort-indicator">↕</span></th>
+                            <th onclick="sortTable('price')">Price <span class="sort-indicator">↕</span></th>
+                            <th onclick="sortTable('forward_peg')">Forward PEG <span class="sort-indicator">↕</span></th>
+                            <th onclick="sortTable('roe')">ROE % <span class="sort-indicator">↕</span></th>
+                            <th onclick="sortTable('profit_margin')">Profit Margin % <span class="sort-indicator">↕</span></th>
+                        </tr>
+                    </thead>
+                    <tbody id="buyTableBody">
+                        <!-- Data will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Hold Recommendations Tab -->
+        <div class="tab-pane fade" id="holdTab">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th onclick="sortTable('symbol')">Symbol <span class="sort-indicator">↕</span></th>
+                            <th>Company Name</th>
+                            <th onclick="sortTable('stars')">Stars <span class="sort-indicator">↕</span></th>
+                            <th onclick="sortTable('price')">Price <span class="sort-indicator">↕</span></th>
+                            <th onclick="sortTable('forward_peg')">Forward PEG <span class="sort-indicator">↕</span></th>
+                            <th onclick="sortTable('roe')">ROE % <span class="sort-indicator">↕</span></th>
+                            <th onclick="sortTable('profit_margin')">Profit Margin % <span class="sort-indicator">↕</span></th>
+                        </tr>
+                    </thead>
+                    <tbody id="holdTableBody">
+                        <!-- Data will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Sell Avoidance Tab -->
+        <div class="tab-pane fade" id="sellTab">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th onclick="sortTable('symbol')">Symbol <span class="sort-indicator">↕</span></th>
+                            <th>Company Name</th>
+                            <th onclick="sortTable('stars')">Stars <span class="sort-indicator">↕</span></th>
+                            <th onclick="sortTable('price')">Price <span class="sort-indicator">↕</span></th>
+                            <th onclick="sortTable('forward_peg')">Forward PEG <span class="sort-indicator">↕</span></th>
+                            <th onclick="sortTable('roe')">ROE % <span class="sort-indicator">↕</span></th>
+                            <th onclick="sortTable('profit_margin')">Profit Margin % <span class="sort-indicator">↕</span></th>
+                        </tr>
+                    </thead>
+                    <tbody id="sellTableBody">
+                        <!-- Data will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Main JavaScript -->
+<script>
+// API Base URL
+const API_BASE = 'http://localhost:5000';
+
+// Global data storage
+let buyData = [];
+let holdData = [];
+let sellData = [];
+let lastUpdate = '';
+
+// Sort state
+let sortColumn = null;
+let sortDirection = 'asc';
+
+// Fetch all data on page load
+document.addEventListener('DOMContentLoaded', function() {
+    fetchData();
+});
+
+// Refresh button handler
+document.getElementById('refreshBtn').addEventListener('click', async function() {
+    // Trigger fresh analysis first
+    try {
+        await fetch(`${API_BASE}/api/analyze`, { method: 'POST' });
+        alert('Fresh analysis started! Data will update in a few moments...');
+        setTimeout(fetchData, 5000); // Wait 5 seconds for analysis to complete
+    } catch (error) {
+        console.error('Error triggering analysis:', error);
+        fetchData(); // Just fetch current data
+    }
+});
+
+// Fetch all stock data from API
+async function fetchData() {
+    showLoading(true);
+    
+    try {
+        // Fetch stats first
+        const statsResponse = await fetch(`${API_BASE}/api/stats`);
+        if (!statsResponse.ok) throw new Error('Stats fetch failed');
+        const statsData = await statsResponse.json();
+        
+        // Update statistics cards
+        document.getElementById('buyCount').textContent = statsData.buy_recommendations;
+        document.getElementById('holdCount').textContent = statsData.hold_recommendations;
+        document.getElementById('sellCount').textContent = statsData.sell_avoidance;
+        document.getElementById('totalCount').textContent = statsData.total;
+        
+        // Format last update time
+        if (statsData.last_update) {
+            const date = new Date(statsData.last_update);
+            lastUpdate = date.toLocaleString();
+            document.getElementById('lastUpdate').textContent = lastUpdate;
+        }
+        
+        // Fetch buy recommendations
+        const buyResponse = await fetch(`${API_BASE}/api/buy-recommendations`);
+        if (buyResponse.ok) {
+            const buyJson = await buyResponse.json();
+            buyData = buyJson.data || [];
+            renderTable('buyTableBody', buyData);
+        }
+        
+        // Fetch hold recommendations
+        const holdResponse = await fetch(`${API_BASE}/api/hold-recommendations`);
+        if (holdResponse.ok) {
+            const holdJson = await holdResponse.json();
+            holdData = holdJson.data || [];
+            renderTable('holdTableBody', holdData);
+        }
+        
+        // Fetch sell avoidance
+        const sellResponse = await fetch(`${API_BASE}/api/sell-avoidance`);
+        if (sellResponse.ok) {
+            const sellJson = await sellResponse.json();
+            sellData = sellJson.data || [];
+            renderTable('sellTableBody', sellData);
+        }
+        
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        showError('Failed to connect to server. Make sure the server is running on http://localhost:5000');
+    } finally {
+        showLoading(false);
+    }
+}
+
+// Render table rows
+function renderTable(tableId, data) {
+    const tbody = document.getElementById(tableId);
+    
+    if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center">No data available</td></tr>';
+        return;
+    }
+    
+    // Sort data if sort column is set
+    let sortedData = [...data];
+    if (sortColumn) {
+        sortedData.sort((a, b) => compareValues(a[sortColumn], b[sortColumn]));
+    }
+    
+    tbody.innerHTML = sortedData.map(stock => `
+        <tr>
+            <td><strong>${stock.symbol || 'N/A'}</strong></td>
+            <td>${stock.company_name || stock.name || 'N/A'}</td>
+            <td class="stars">${getStarsHTML(stock.stars)}</td>
+            <td>$${formatNumber(stock.price)}</td>
+            <td>${formatNumber(stock.forward_peg, 2)}</td>
+            <td>${formatNumber(stock.roe, 1)}%</td>
+            <td>${formatNumber(stock.profit_margin, 1)}%</td>
+        </tr>
+    `).join('');
+}
+
+// Get stars HTML
+function getStarsHTML(stars) {
+    const fullStars = Math.floor(stars);
+    const hasHalfStar = stars % 1 >= 0.5;
+    
+    let html = '';
+    for (let i = 0; i < fullStars; i++) {
+        html += '★';
+    }
+    if (hasHalfStar) {
+        html += '½';
+    }
+    return html + ` (${stars})`;
+}
+
+// Format number with commas and decimals
+function formatNumber(num, decimals = 0) {
+    if (num === null || num === undefined || isNaN(num)) return '-';
+    return Number(num).toLocaleString('en-US', { 
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals 
+    });
+}
+
+// Compare values for sorting
+function compareValues(a, b) {
+    // Handle null/undefined
+    if (a === null || a === undefined) return 1;
+    if (b === null || b === undefined) return -1;
+    
+    const numA = typeof a === 'string' ? parseFloat(a) : a;
+    const numB = typeof b === 'string' ? parseFloat(b) : b;
+    
+    if (isNaN(numA)) return 1;
+    if (isNaN(numB)) return -1;
+    
+    return sortDirection === 'asc' ? numA - numB : numB - numA;
+}
+
+// Sort table by column
+function sortTable(column) {
+    // Toggle direction or set new column
+    if (sortColumn === column) {
+        sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        sortColumn = column;
+        sortDirection = 'asc';
+    }
+    
+    // Re-render all tables with sorting
+    renderTable('buyTableBody', buyData);
+    renderTable('holdTableBody', holdData);
+    renderTable('sellTableBody', sellData);
+}
+
+// Show/hide loading spinner
+function showLoading(show) {
+    document.getElementById('loadingSpinner').style.display = show ? 'block' : 'none';
+    document.getElementById('mainContent').style.opacity = show ? '0.5' : '1';
+}
+
+// Show error message
+function showError(message) {
+    alert(message);
+}
+</script>
+
+</body>
+</html>

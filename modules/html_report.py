@@ -157,7 +157,7 @@ def generate_beautiful_html(
         timestamp: Timestamp string for the report
         output_path: Path to save the HTML file
     """
-    from html_template import render_html
+    from .html_template import render_html
     
     categories = categorize_stocks(rows)
     

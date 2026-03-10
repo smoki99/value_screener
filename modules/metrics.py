@@ -20,27 +20,33 @@ def calculate_gaap_peg(info: dict) -> float | None:
     try:
         pe = info.get('trailingPE')
         growth = info.get('earningsGrowth')
+        # earningsGrowth is a decimal (e.g., 0.12 for 12%)
+        # PEG = PE / Growth% where Growth% is the whole number
         if pe and growth and growth > 0:
-            return float(pe) / float(growth)
+            return float(pe) / (float(growth) * 100)
     except (KeyError, TypeError):
         pass
     return None
 
 
-def calculate_forward_peg(info: dict) -> float | None:
+def calculate_forward_peg(info: dict, growth_rate: float | None = None) -> float | None:
     """Calculate Forward PEG ratio.
     
     Args:
         info: Stock info dictionary from yfinance
+        growth_rate: Optional forward-looking growth rate as decimal (e.g., 0.12 for 12%)
         
     Returns:
         Forward PEG ratio or None if not calculable
     """
     try:
         forward_pe = info.get('forwardPE')
-        growth = info.get('earningsGrowth')
+        # Use provided growth_rate first, fallback to earningsGrowth
+        growth = growth_rate if growth_rate is not None else info.get('earningsGrowth')
         if forward_pe and growth and growth > 0:
-            return float(forward_pe) / float(growth)
+            # Convert decimal growth rate (e.g., 0.12) to percentage (e.g., 12)
+            # PEG = PE / Growth% where Growth% is the whole number
+            return float(forward_pe) / (float(growth) * 100)
     except (KeyError, TypeError):
         pass
     return None
