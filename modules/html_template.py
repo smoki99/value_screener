@@ -1,6 +1,6 @@
 """
 HTML Template für den NASDAQ-100 Cheapest Quality Screener.
-Wird von nasdaq100_quality_value.py importiert.
+Wird von modules/html_report.py importiert.
 """
 
 HTML_TEMPLATE = """<!DOCTYPE html>
@@ -227,7 +227,7 @@ tr:last-child td { border-bottom: none; }
     <span><strong>D.GP/D.PB</strong> = Dezil im Universum (10=best)</span>
     <span><strong>AG</strong> = Asset Growth (niedrig=gut)</span>
     <span>GP/A: <span class="green">■ ≥30%</span> <span class="yellow">■ 15–30%</span> <span class="red">■ &lt;15%</span></span>
-    <span>GM: <span class="green">■ ≥50%</span> <span class="yellow">�� 30–50%</span> <span class="red">■ &lt;30%</span></span>
+    <span>GM: <span class="green">■ ≥50%</span> <span class="yellow">■ 30–50%</span> <span class="red">■ &lt;30%</span></span>
     <span>ROE: <span class="green">■ ≥20%</span> <span class="yellow">■ 10–20%</span> <span class="red">■ &lt;10%</span></span>
     <span>P/B: <span class="green">■ ≤5</span> <span class="yellow">■ 5–15</span> <span class="red">■ &gt;15</span></span>
     <span>PEG: <span class="green">■ ≤1.0</span> <span class="yellow">■ 1.0–1.5</span> <span class="red">■ &gt;1.5</span></span>
