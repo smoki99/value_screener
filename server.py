@@ -238,7 +238,7 @@ def get_buy_recommendations():
         })
     
     # Filter stocks with 4-5 stars
-    buy_stocks = [stock for stock in cached_data if stock.get('stars', 0) >= 4]
+    buy_stocks = [stock for stock in cached_data if stock.get('star_rating', 0) >= 4]
     
     # Convert percentages to whole numbers (0.50 -> 50)
     converted_buy_stocks = convert_percentages_to_whole_numbers(buy_stocks.copy())
@@ -270,7 +270,7 @@ def get_hold_recommendations():
         })
     
     # Filter stocks with exactly 3 stars
-    hold_stocks = [stock for stock in cached_data if stock.get('stars', 0) == 3]
+    hold_stocks = [stock for stock in cached_data if stock.get('star_rating', 0) == 3]
     
     # Convert percentages to whole numbers (0.50 -> 50)
     converted_hold_stocks = convert_percentages_to_whole_numbers(hold_stocks.copy())
@@ -302,7 +302,7 @@ def get_sell_avoidance():
         })
     
     # Filter stocks with 0-2 stars
-    sell_stocks = [stock for stock in cached_data if stock.get('stars', 0) <= 2]
+    sell_stocks = [stock for stock in cached_data if stock.get('star_rating', 0) <= 2]
     
     # Convert percentages to whole numbers (0.50 -> 50)
     converted_sell_stocks = convert_percentages_to_whole_numbers(sell_stocks.copy())
@@ -374,9 +374,9 @@ def get_stats():
     
     # Calculate statistics
     total = len(cached_data)
-    buy_count = sum(1 for s in cached_data if s.get('stars', 0) >= 4)
-    hold_count = sum(1 for s in cached_data if s.get('stars', 0) == 3)
-    sell_count = sum(1 for s in cached_data if s.get('stars', 0) <= 2)
+    buy_count = sum(1 for s in cached_data if s.get('star_rating', 0) >= 4)
+    hold_count = sum(1 for s in cached_data if s.get('star_rating', 0) == 3)
+    sell_count = sum(1 for s in cached_data if s.get('star_rating', 0) <= 2)
     
     return jsonify({
         'total': total,
