@@ -35,48 +35,17 @@ cache_timestamp = None
 
 def convert_percentages_to_whole_numbers(stock_data):
     """
-    Convert decimal percentages (0.50) to whole numbers (50).
-    Applied in-place for efficiency.
+    No conversion needed - source data is already in decimal format.
+    Star ratings and color coding expect decimals (e.g., 0.14679).
+    Frontend handles display formatting by multiplying by 100.
     
     Args:
         stock_data: List of stock dictionaries
         
     Returns:
-        Modified list with percentage values as whole numbers
+        Unmodified list - keeps decimal format from source
     """
-    for stock in stock_data:
-        # GP/A - Gross Profit / Assets (percentage)
-        if 'gp_a' in stock and stock['gp_a'] is not None:
-            stock['gp_a'] = round(stock['gp_a'] * 100, 2)
-        
-        # GM - Gross Margin (percentage)
-        if 'gross_margin' in stock and stock['gross_margin'] is not None:
-            stock['gross_margin'] = round(stock['gross_margin'] * 100, 2)
-        
-        # Profit Margin (percentage)
-        if 'profit_margin' in stock and stock['profit_margin'] is not None:
-            stock['profit_margin'] = round(stock['profit_margin'] * 100, 2)
-        
-        # ROE - Return on Equity (percentage)
-        if 'roe' in stock and stock['roe'] is not None:
-            stock['roe'] = round(stock['roe'] * 100, 2)
-        
-        # Growth Rate (percentage)
-        if 'growth_rate' in stock and stock['growth_rate'] is not None:
-            stock['growth_rate'] = round(stock['growth_rate'] * 100, 2)
-        
-        # Asset Growth (percentage)
-        if 'asset_growth' in stock and stock['asset_growth'] is not None:
-            stock['asset_growth'] = round(stock['asset_growth'] * 100, 2)
-        
-        # Performance 6M (percentage)
-        if 'perf_6m' in stock and stock['perf_6m'] is not None:
-            stock['perf_6m'] = round(stock['perf_6m'] * 100, 2)
-        
-        # Performance 12M (percentage)
-        if 'perf_12m' in stock and stock['perf_12m'] is not None:
-            stock['perf_12m'] = round(stock['perf_12m'] * 100, 2)
-    
+    # No conversion needed - keep decimals from source data
     return stock_data
 
 

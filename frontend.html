@@ -315,8 +315,8 @@ function renderTable(tableId, data) {
             <td class="stars">${getStarsHTML(stock.stars)}</td>
             <td>$${formatNumber(stock.price)}</td>
             <td>${formatNumber(stock.forward_peg, 2)}</td>
-            <td>${formatNumber(stock.roe, 1)}%</td>
-            <td>${formatNumber(stock.profit_margin, 1)}%</td>
+            <td>${formatNumber(stock.roe * 100, 1)}%</td>
+            <td>${formatNumber(stock.profit_margin * 100, 1)}%</td>
         </tr>
     `).join('');
 }
