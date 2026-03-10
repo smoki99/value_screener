@@ -103,7 +103,7 @@ function renderTable(tableId, data) {
         <tr>
             <td><strong>${stock.symbol || 'N/A'}</strong></td>
             <td>${stock.company_name || stock.name || 'N/A'}</td>
-            <td class="stars">${getStarsHTML(stock.stars)}</td>
+            <td class="stars">${getStarsHTML(stock.star_rating)}</td>
             <td>$${formatNumber(stock.price)}</td>
             <td>${formatNumber(stock.forward_peg, 2)}</td>
             <td>${formatNumber(stock.roe * 100, 1)}%</td>
