@@ -2,69 +2,143 @@
 Financial metric calculations.
 
 Computes PEG ratios, growth rates, and other key financial indicators.
+Based on original.py reference implementation.
 """
 
 import pandas as pd
 from typing import Any
 
 
-def calculate_gaap_peg(info: dict) -> float | None:
-    """Calculate GAAP PEG ratio (P/E / Growth).
+def calculate_gaap_peg(info: dict, financials: pd.DataFrame | None) -> float | None:
+    """Calculate GAAP PEG ratio using historical Net Income CAGR.
     
     Args:
         info: Stock info dictionary from yfinance
+        financials: Financial statements DataFrame with 'Net Income' row
         
     Returns:
         GAAP PEG ratio or None if not calculable
     """
     try:
-        pe = info.get('trailingPE')
-        growth = info.get('earningsGrowth')
-        # earningsGrowth is a decimal (e.g., 0.12 for 12%)
-        # PEG = PE / Growth% where Growth% is the whole number
-        if pe and growth and growth > 0:
-            return float(pe) / (float(growth) * 100)
-    except (KeyError, TypeError):
-        pass
-    return None
+        trailing_pe = info.get('trailingPE')
+        if trailing_pe is None or trailing_pe <= 0:
+            return None
+        if financials is None or financials.empty:
+            return None
+        net_income = financials.loc['Net Income']
+        if len(net_income) < 2:
+            return None
+        net_income = net_income.dropna()
+        if len(net_income) < 2:
+            return None
+        latest = net_income.iloc[0]
+        oldest = net_income.iloc[-1]
+        years = len(net_income) - 1
+        if oldest <= 0 or latest <= 0:
+            return None
+        cagr = (latest / oldest) ** (1 / years) - 1
+        growth_pct = cagr * 100
+        if growth_pct <= 0:
+            return None
+        return trailing_pe / growth_pct
+    except (KeyError, IndexError, ZeroDivisionError):
+        return None
 
 
-def calculate_forward_peg(info: dict, growth_rate: float | None = None) -> float | None:
-    """Calculate Forward PEG ratio.
+def calculate_forward_peg(info: dict, growth_estimates: dict | None) -> tuple[float | None, float | None, str]:
+    """Calculate Forward PEG ratio with capping and dampening.
     
     Args:
         info: Stock info dictionary from yfinance
-        growth_rate: Optional forward-looking growth rate as decimal (e.g., 0.12 for 12%)
+        growth_estimates: Dictionary with 'growth_2y', 'growth_1y', 'source' keys
         
     Returns:
-        Forward PEG ratio or None if not calculable
+        Tuple of (peg_value, growth_used_as_decimal, source_string)
     """
-    try:
-        forward_pe = info.get('forwardPE')
-        # Use provided growth_rate first, fallback to earningsGrowth
-        growth = growth_rate if growth_rate is not None else info.get('earningsGrowth')
-        if forward_pe and growth and growth > 0:
-            # Convert decimal growth rate (e.g., 0.12) to percentage (e.g., 12)
-            # PEG = PE / Growth% where Growth% is the whole number
-            return float(forward_pe) / (float(growth) * 100)
-    except (KeyError, TypeError):
-        pass
-    return None
+    forward_pe = info.get('forwardPE')
+    if forward_pe is None or forward_pe <= 0:
+        return None, None, "N/A"
+
+    if growth_estimates is None:
+        return None, None, "N/A"
+
+    # Try 2-year blend first (from GE-2Y or EE-2Y)
+    g2 = growth_estimates.get('growth_2y')
+    if g2 is not None and g2 > 0:
+        capped = min(g2, 0.60)  # Cap at 60%
+        growth_pct = capped * 100
+        peg = forward_pe / growth_pct
+        return peg, capped, growth_estimates.get('source', 'GE-2Y')
+
+    # Try 1-year from GE or EE sources
+    g1_ge = growth_estimates.get('growth_1y')
+    src = growth_estimates.get('source', 'N/A')
+    if g1_ge is not None and g1_ge > 0 and (src.startswith('GE') or src.startswith('EE')):
+        capped = min(g1_ge, 0.60)  # Cap at 60%
+        growth_pct = capped * 100
+        peg = forward_pe / growth_pct
+        return peg, capped, src
+
+    # Fallback: info-based growth with dampening (30% base + 20% of excess, max 50%)
+    if g1_ge is not None and g1_ge > 0:
+        base = min(g1_ge, 0.30)
+        excess = max(0, g1_ge - 0.30) * 0.2
+        dampened = base + excess
+        dampened = min(dampened, 0.50)  # Cap at 50%
+        growth_pct = dampened * 100
+        peg = forward_pe / growth_pct
+        return peg, dampened, f"1Y→{src}"
+
+    return None, None, "N/A"
 
 
-def get_peg_values(info: dict, financials: pd.DataFrame | None) -> tuple[float | None, float | None]:
-    """Get both GAAP and Forward PEG values.
+def get_peg_values(info: dict, financials: pd.DataFrame | None, growth_estimates: dict | None) -> tuple[float | None, float | None, float | None, str]:
+    """Get both GAAP and Forward PEG values with source tracking.
     
     Args:
         info: Stock info dictionary from yfinance
-        financials: Financial statements DataFrame (unused but kept for compatibility)
+        financials: Financial statements DataFrame
+        growth_estimates: Growth estimates dictionary
         
     Returns:
-        Tuple of (gaap_peg, forward_peg)
+        Tuple of (fwd_peg, gaap_peg, growth_used, peg_source)
     """
-    gaap = calculate_gaap_peg(info)
-    forward = calculate_forward_peg(info)
-    return gaap, forward
+    fwd_peg, growth_used, peg_source = calculate_forward_peg(info, growth_estimates)
+
+    # Sanity check: discard extreme values
+    if fwd_peg is not None and (fwd_peg < 0 or fwd_peg > 50):
+        fwd_peg = None
+
+    gaap_peg = calculate_gaap_peg(info, financials)
+
+    return fwd_peg, gaap_peg, growth_used, peg_source
+
+
+def get_star_rating(value: float | None, thresholds: list[float], reverse: bool = False, penalize_negative: bool = False) -> int:
+    """Calculate star rating (1-5) based on value and thresholds.
+    
+    Args:
+        value: The metric value to rate
+        thresholds: List of 4 threshold values for stars 2-5
+        reverse: If True, lower is better (e.g., P/B ratio)
+        penalize_negative: If True, negative values get 1 star
+        
+    Returns:
+        Star rating from 0 to 5
+    """
+    if value is None or pd.isna(value):
+        return 0
+    if penalize_negative and value < 0:
+        return 1
+    stars = 1
+    for t in thresholds:
+        if not reverse:
+            if value >= t:
+                stars += 1
+        else:
+            if value <= t:
+                stars += 1
+    return min(stars, 5)
 
 
 def compute_metrics(
@@ -86,28 +160,76 @@ def compute_metrics(
         growth_estimates: Growth estimates dictionary
         
     Returns:
-        Dictionary with all computed metrics
+        Dictionary with all computed metrics including star ratings
     """
     from .fetcher import calculate_asset_growth
     
-    # Get PEG values
-    gaap_peg, forward_peg = get_peg_values(info, financials)
+    # Get PEG values with source tracking
+    fwd_peg, gaap_peg, growth_used, peg_source = get_peg_values(info, financials, growth_estimates)
     
-    # Calculate growth rate (prefer 2-year blend, fallback to 1-year)
-    growth_rate = None
-    if growth_estimates.get('growth_2y'):
-        growth_rate = float(growth_estimates['growth_2y'])
-    elif growth_estimates.get('growth_1y'):
-        growth_rate = float(growth_estimates['growth_1y'])
-    
-    # Calculate asset growth
+    # Calculate GP/A (Gross Profit / Total Assets)
+    gp_a = None
+    gross_margin = None
+    try:
+        gp = financials.loc['Gross Profit'].iloc[0]
+        assets = balance_sheet.loc['Total Assets'].iloc[0]
+        gp_a = gp / assets
+    except (KeyError, IndexError, ZeroDivisionError):
+        pass
+
+    # Calculate Gross Margin
+    try:
+        gp = financials.loc['Gross Profit'].iloc[0]
+        revenue = financials.loc['Total Revenue'].iloc[0]
+        if revenue and revenue > 0:
+            gross_margin = gp / revenue
+    except (KeyError, IndexError, ZeroDivisionError):
+        pass
+
+    # Get ROE and P/B from info
+    roe = info.get('returnOnEquity')
+    pb = info.get('priceToBook')
+
+    # Handle negative P/B
+    if pb is not None and pb < 0:
+        pb = None
+
+    # Adjust ROE for scoring when extreme values present
+    roe_for_scoring = roe
+    if roe is not None and pb is not None:
+        if roe > 1.0 and pb > 50:
+            roe_for_scoring = None
+
+    # Calculate asset growth (Novy-Marx control factor)
     asset_growth = calculate_asset_growth(balance_sheet)
-    
+
+    # Calculate star ratings
+    s_gpa = get_star_rating(gp_a, [0.1, 0.2, 0.3, 0.4])
+    s_roe = get_star_rating(roe_for_scoring, [0.05, 0.10, 0.20, 0.30], penalize_negative=True)
+    s_pb = get_star_rating(pb, [40.0, 20.0, 10.0, 5.0], reverse=True, penalize_negative=True)
+    s_fwd_peg = get_star_rating(fwd_peg, [2.5, 2.0, 1.5, 1.0], reverse=True)
+    s_mom = get_star_rating(perf_12m, [0.0, 0.10, 0.25, 0.50])
+
+    # Get company name
+    name = info.get('shortName') or info.get('longName') or ''
+
     return {
+        'symbol': info.get('symbol', ''),
+        'name': name,
+        'gp_a': gp_a,
+        'gross_margin': gross_margin,
+        'roe': roe,
+        'pb': pb,
+        'fwd_peg': fwd_peg,
         'gaap_peg': gaap_peg,
-        'forward_peg': forward_peg,
-        'growth_rate': growth_rate,
+        'growth_used': growth_used,
+        'peg_source': peg_source,
         'asset_growth': asset_growth,
         'perf_6m': perf_6m,
         'perf_12m': perf_12m,
+        's_gpa': s_gpa,
+        's_roe': s_roe,
+        's_pb': s_pb,
+        's_fwd_peg': s_fwd_peg,
+        's_mom': s_mom,
     }

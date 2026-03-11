@@ -37,11 +37,10 @@ def build_unified_row(
     
     # Compute metrics
     metrics = compute_metrics(info, financials, balance_sheet, perf_6m, perf_12m, growth_estimates)
-    gaap_peg, forward_peg_legacy = get_peg_values(info, financials)
     
-    # Calculate forward PEG using growth_rate from estimates (more accurate than earningsGrowth)
-    growth_rate = metrics['growth_rate']
-    forward_peg = calculate_forward_peg(info, growth_rate) if growth_rate else forward_peg_legacy
+    # Get PEG values with source tracking
+    fwd_peg, gaap_peg, growth_used, peg_source = get_peg_values(info, financials, growth_estimates)
+    forward_peg = fwd_peg
     
     # Calculate scores
     nm_score = score_novy_marx(info, financials, balance_sheet, perf_6m, perf_12m, growth_estimates)
@@ -61,7 +60,7 @@ def build_unified_row(
         'forward_pe': info.get('forwardPE'),
         'peg_ratio': gaap_peg,
         'forward_peg': forward_peg,
-        'growth_rate': metrics['growth_rate'],
+        'growth_rate': metrics['growth_used'],
         'gross_margin': info.get('grossMargins'),
         'profit_margin': info.get('profitMargins'),
         'roe': info.get('returnOnEquity'),
