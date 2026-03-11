@@ -34,7 +34,13 @@ def build_unified_row(
         Dictionary with all stock data in unified format
     """
     from .metrics import compute_metrics, get_peg_values, calculate_forward_peg
-    from .scoring import score_novy_marx, score_multi_factor, get_star_rating
+    from .scoring import (
+        score_novy_marx,
+        score_multi_factor,
+        score_novy_marx_weighted,
+        score_multi_factor_weighted,
+        get_star_rating
+    )
     from .fetcher import calculate_asset_growth
     
     # Compute metrics - this includes gp_a calculation and all other metrics
@@ -44,9 +50,20 @@ def build_unified_row(
     fwd_peg, gaap_peg, growth_used, peg_source = get_peg_values(info, financials, growth_estimates)
     forward_peg = fwd_peg
     
-    # Calculate scores
-    nm_score = score_novy_marx(info, financials, balance_sheet, perf_6m, perf_12m, growth_estimates)
-    mf_score = score_multi_factor(info, financials, balance_sheet, perf_6m, perf_12m, growth_estimates)
+    # Calculate individual star ratings for weighted scoring
+    s_gpa = get_star_rating(metrics['gp_a'], [0.15, 0.30, 0.45, 0.60], reverse=False) if metrics['gp_a'] else 0
+    s_roe = get_star_rating(info.get('returnOnEquity'), [0.10, 0.20, 0.30, 0.40], reverse=False) if info.get('returnOnEquity') else 0
+    s_pb = get_star_rating(info.get('priceToBook'), [5.0, 10.0, 15.0, 20.0], reverse=True) if info.get('priceToBook') else 0
+    s_fpeg = get_star_rating(forward_peg, [0.5, 1.0, 1.5, 2.0], reverse=True) if forward_peg else 0
+    
+    # Calculate momentum star rating (6-month performance)
+    s_momentum = 0
+    if perf_6m is not None:
+        s_momentum = get_star_rating(perf_6m * 100, [-20.0, -5.0, 5.0, 20.0], reverse=False) if perf_6m >= -0.2 else 0
+    
+    # Calculate weighted scores (0-4.0 scale)
+    nm_score = score_novy_marx_weighted(s_gpa, s_pb, s_momentum)
+    mf_score = score_multi_factor_weighted(s_gpa, s_roe, s_pb, s_fpeg, s_momentum)
     
     # Get star rating - prefer forward_peg if available (more forward-looking)
     peg_for_rating = forward_peg if forward_peg is not None else gaap_peg

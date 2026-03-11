@@ -420,8 +420,8 @@ function showStockDetails(symbol) {
                     <div class="stat-value ${getColorClass(stock.forward_peg, 'peg')}">${formatNumber(stock.forward_peg, 2)}</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-label">Novy Marx Score</div>
-                    <div class="stat-value">${formatNumber(stock.nm_score, 2)}</div>
+                    <div class="stat-label">Quality Score (NM)</div>
+                    <div class="stat-value">${formatNumber(stock.nm_score, 1)}</div>
                 </div>
             </div>
             
