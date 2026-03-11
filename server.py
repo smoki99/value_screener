@@ -238,11 +238,13 @@ def get_buy_recommendations():
             'last_update': None
         })
     
-    # Filter: quality rating is "★★★" OR ("★★" with forward_peg < 1.0) - both are buys
+    # Filter: rounded star rating >= 4 AND <= 5 AND forward_peg <= 1.5 - buy recommendations
     buy_stocks = [
         stock for stock in cached_data 
-        if stock.get('quality_rating') == '★★★' or 
-           (stock.get('quality_rating') == '★★' and stock.get('forward_peg') is not None and stock.get('forward_peg') < 1.0)
+        if stock.get('star_rating') is not None and 
+           round(stock.get('star_rating')) >= 4 and 
+           round(stock.get('star_rating')) <= 5 and
+           (stock.get('forward_peg') is None or stock.get('forward_peg') <= 1.5)
     ]
     
     # Convert percentages to whole numbers (0.50 -> 50)
@@ -274,14 +276,12 @@ def get_hold_recommendations():
             'last_update': None
         })
     
-    # Filter: "★★" with peg >= 1.0 AND peg < 1.5 (hold till peg > 1.5)
-    # Excludes those already in buy (forward_peg < 1.0)
+    # Filter: rounded star rating == 3 AND forward_peg <= 1.5 - hold recommendations
     hold_stocks = [
         stock for stock in cached_data 
-        if stock.get('quality_rating') == '★★' and 
-           stock.get('peg_ratio') is not None and 
-           stock.get('peg_ratio') >= 1.0 and 
-           stock.get('peg_ratio') < 1.5
+        if stock.get('star_rating') is not None and 
+           round(stock.get('star_rating')) == 3 and
+           (stock.get('forward_peg') is None or stock.get('forward_peg') <= 1.5)
     ]
     
     # Convert percentages to whole numbers (0.50 -> 50)
@@ -313,15 +313,13 @@ def get_sell_avoidance():
             'last_update': None
         })
     
-    # Filter: everything else (sell)
-    # Includes: "★★" with peg >= 1.5, and all other ratings
+    # Filter: rounded star rating <= 2 OR quality_rating is '★' or '—' OR forward_peg > 1.5 - sell/avoid recommendations
     sell_stocks = [
         stock for stock in cached_data 
-        if not (
-            stock.get('quality_rating') == '★★★' or 
-            (stock.get('quality_rating') == '★★' and stock.get('forward_peg') is not None and stock.get('forward_peg') < 1.0) or
-            (stock.get('quality_rating') == '★★' and stock.get('peg_ratio') is not None and stock.get('peg_ratio') >= 1.0 and stock.get('peg_ratio') < 1.5)
-        )
+        if (stock.get('star_rating') is None or round(stock.get('star_rating')) <= 2) or
+           stock.get('quality_rating') == '★' or
+           stock.get('quality_rating') == '—' or
+           (stock.get('forward_peg') is not None and stock.get('forward_peg') > 1.5)
     ]
     
     # Convert percentages to whole numbers (0.50 -> 50)
@@ -481,21 +479,34 @@ def get_stats():
             'last_update': None
         })
     
-    # Calculate statistics
+    # Calculate statistics by counting actual filter results
     total = len(cached_data)
+    
+    # Count buy: rounded star rating >= 4 AND <= 5 AND forward_peg <= 1.5
     buy_count = sum(
         1 for s in cached_data 
-        if s.get('quality_rating') == '★★★' or 
-           (s.get('quality_rating') == '★★' and s.get('forward_peg') is not None and s.get('forward_peg') < 1.0)
+        if s.get('star_rating') is not None and 
+           round(s.get('star_rating')) >= 4 and 
+           round(s.get('star_rating')) <= 5 and
+           (s.get('forward_peg') is None or s.get('forward_peg') <= 1.5)
     )
+    
+    # Count hold: rounded star rating == 3 AND forward_peg <= 1.5
     hold_count = sum(
         1 for s in cached_data 
-        if s.get('quality_rating') == '★★' and 
-           s.get('peg_ratio') is not None and 
-           s.get('peg_ratio') >= 1.0 and 
-           s.get('peg_ratio') < 1.5
+        if s.get('star_rating') is not None and 
+           round(s.get('star_rating')) == 3 and
+           (s.get('forward_peg') is None or s.get('forward_peg') <= 1.5)
     )
-    sell_count = total - buy_count - hold_count
+    
+    # Count sell: rounded star rating <= 2 OR quality_rating is '★' or '—' OR forward_peg > 1.5
+    sell_count = sum(
+        1 for s in cached_data 
+        if (s.get('star_rating') is None or round(s.get('star_rating')) <= 2) or
+           s.get('quality_rating') == '★' or
+           s.get('quality_rating') == '—' or
+           (s.get('forward_peg') is not None and s.get('forward_peg') > 1.5)
+    )
     
     return jsonify({
         'total': total,

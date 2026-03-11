@@ -64,20 +64,11 @@ def build_unified_row(
     nm_score = score_novy_marx_weighted(s_gpa, s_pb, s_momentum)
     mf_score = score_multi_factor_weighted(s_gpa, s_roe, s_pb, s_fpeg, s_momentum)
     
-    # Get star rating from PEG ratio (forward_peg preferred for forward-looking view)
-    peg_for_star = forward_peg if forward_peg is not None else gaap_peg
-    star_rating_from_peg = get_star_rating(peg_for_star, [2.5, 2.0, 1.5, 1.0], reverse=True)
-    
     # Calculate quality rating based on weighted scores (best of NM and MF)
     quality_rating = get_quality_rating(nm_score, mf_score)
     
-    # Use the highest rating between PEG-based star rating and quality rating
-    # Convert quality rating to numeric for comparison
-    quality_to_numeric = {'★★★': 5, '★★': 4, '★': 3, '—': 1}
-    quality_rating_numeric = quality_to_numeric.get(quality_rating, 1)
-    
-    # Use the maximum of both ratings
-    star_rating = max(star_rating_from_peg, quality_rating_numeric)
+    # Star rating is the maximum of nm_score and mf_score
+    star_rating = max(nm_score, mf_score)
     
     # Extract all available info fields for comprehensive data
     return {

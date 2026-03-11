@@ -78,7 +78,6 @@ table th:hover {
 .perf-pos { color: #3fb950 !important; }
 .perf-neg { color: #f85149 !important; }
 
-
 /* Arrow indicators for Forward PEG comparison */
 .arrow-up {
     display: inline-block;
@@ -110,6 +109,51 @@ table th:hover {
     margin-right: 4px;
 }
 
+/* Stock Search Bar Styles */
+.stock-search-container {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    background-color: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.stock-search-container input {
+    flex: 1;
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+}
+
+.stock-search-container input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.stock-search-container button {
+    padding: 12px 25px;
+    background-color: #667eea;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.stock-search-container button:hover {
+    background-color: #5a6fd6;
+}
+
+#searchResultsCount {
+    color: #667eea;
+    font-weight: bold;
+    white-space: nowrap;
+}
 
 /* Modal Styles */
 .modal-overlay {
