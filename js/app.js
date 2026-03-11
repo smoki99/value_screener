@@ -472,8 +472,8 @@ function showStockDetails(symbol) {
                 </div>
                 <div class="stat-item">
                     <div class="stat-label">Dividend Yield</div>
-                    <div class="stat-value">${formatNumber(stock.dividend_yield * 100, 2)}%</div>
-                </div>
+                    <div class="stat-value ${getFCFCoverageClass(stock.free_cash_flow, stock.dividend_rate, stock.market_cap, stock.price)}">${formatNumber(stock.dividend_yield * 100, 2)}%</div>
+                </div
                 <div class="stat-item">
                     <div class="stat-label">Quality Score (NM)</div>
                     <div class="stat-value">${formatNumber(stock.nm_score, 1)}</div>
@@ -577,6 +577,7 @@ function showStockDetails(symbol) {
                     <div class="metric-row"><span class="metric-label">Dividend Rate</span><span class="metric-value">$${formatNumber(stock.dividend_rate)}</span></div>
                     <div class="metric-row"><span class="metric-label">Dividend Yield</span><span class="metric-value">${formatNumber(stock.dividend_yield * 100, 2)}%</span></div>
                     <div class="metric-row"><span class="metric-label">Payout Ratio</span><span class="metric-value">${formatNumber(stock.payout_ratio * 100, 1)}%</span></div>
+                    <div class="metric-row"><span class="metric-label">FCF Coverage</span><span class="metric-value ${getFCFCoverageClass(stock.free_cash_flow, stock.dividend_rate, stock.market_cap, stock.price)}">${formatNumber(getFCFCoverageRatio(stock.free_cash_flow, stock.dividend_rate, stock.market_cap, stock.price), 2)}</span></div>
                 </div>
             </div>
             
@@ -759,3 +760,44 @@ function getColorClass(value, type) {
             return '';
     }
 }
+
+// Calculate FCF Coverage Ratio
+// Formula: free_cash_flow / (dividend_rate * shares_outstanding)
+// where shares_outstanding = market_cap / price
+function getFCFCoverageRatio(freeCashFlow, dividendRate, marketCap, price) {
+    // Check if all required values are valid
+    if (!freeCashFlow || !dividendRate || !marketCap || !price) return null;
+    
+    const fcf = Number(freeCashFlow);
+    const divRate = Number(dividendRate);
+    const mktCap = Number(marketCap);
+    const prc = Number(price);
+    
+    // Check for valid numbers
+    if (isNaN(fcf) || isNaN(divRate) || isNaN(mktCap) || isNaN(prc)) return null;
+    
+    // Calculate shares outstanding
+    const sharesOutstanding = mktCap / prc;
+    
+    // Calculate total annual dividend payout
+    const totalAnnualDividends = divRate * sharesOutstanding;
+    
+    // Avoid division by zero
+    if (totalAnnualDividends === 0) return null;
+    
+    // Return FCF coverage ratio
+    return fcf / totalAnnualDividends;
+}
+
+// Get color class for FCF Coverage Ratio
+function getFCFCoverageClass(freeCashFlow, dividendRate, marketCap, price) {
+    const ratio = getFCFCoverageRatio(freeCashFlow, dividendRate, marketCap, price);
+    
+    if (ratio === null || isNaN(ratio)) return '';
+    
+    // Green if >1 (fully covered), yellow if 0.5-1, red if <0.5
+    if (ratio >= 1) return 'c-green';
+    if (ratio >= 0.5) return 'c-yellow';
+    return 'c-red';
+}
+

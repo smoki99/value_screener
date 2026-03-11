@@ -120,8 +120,9 @@ def build_unified_row(
         
         # Dividend data
         'dividend_rate': info.get('dividendRate'),
-        'dividend_yield': info.get('dividendYield'),
+        'dividend_yield': info.get('dividendYield') / 100 if info.get('dividendYield') else None,
         'payout_ratio': info.get('payoutRatio'),
+
         'ex_dividend_date': info.get('exDividendDate'),
         
         # Balance sheet data
