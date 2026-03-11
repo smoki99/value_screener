@@ -265,6 +265,19 @@ function renderCandlestickChart(symbol, data, result) {
         
         candleSeries.setData(candleData);
         
+        // Set visible range to show only the last 1 year (most recent data)
+        if (candleData.length >= 2) {
+            const lastTime = candleData[candleData.length - 1].time;
+            // Find a point approximately 1 year before the end
+            // Assuming daily data, ~365 days back from the end
+            const oneYearBackIndex = Math.max(0, candleData.length - 365);
+            const firstTime = candleData[oneYearBackIndex].time;
+            chart.timeScale().setVisibleRange({
+                from: firstTime,
+                to: lastTime
+            });
+        }
+        
         // Prepare 50-day SMA data
         const sma50Data = data.filter(d => d.sma_50 !== null).map(d => ({
             time: d.date,
