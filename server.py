@@ -238,8 +238,12 @@ def get_buy_recommendations():
             'last_update': None
         })
     
-    # Filter stocks with 4-5 stars
-    buy_stocks = [stock for stock in cached_data if stock.get('star_rating', 0) >= 4]
+    # Filter: quality rating is "★★★" OR ("★★" with forward_peg < 1.0) - both are buys
+    buy_stocks = [
+        stock for stock in cached_data 
+        if stock.get('quality_rating') == '★★★' or 
+           (stock.get('quality_rating') == '★★' and stock.get('forward_peg') is not None and stock.get('forward_peg') < 1.0)
+    ]
     
     # Convert percentages to whole numbers (0.50 -> 50)
     converted_buy_stocks = convert_percentages_to_whole_numbers(buy_stocks.copy())
@@ -270,8 +274,15 @@ def get_hold_recommendations():
             'last_update': None
         })
     
-    # Filter stocks with exactly 3 stars
-    hold_stocks = [stock for stock in cached_data if stock.get('star_rating', 0) == 3]
+    # Filter: "★★" with peg >= 1.0 AND peg < 1.5 (hold till peg > 1.5)
+    # Excludes those already in buy (forward_peg < 1.0)
+    hold_stocks = [
+        stock for stock in cached_data 
+        if stock.get('quality_rating') == '★★' and 
+           stock.get('peg_ratio') is not None and 
+           stock.get('peg_ratio') >= 1.0 and 
+           stock.get('peg_ratio') < 1.5
+    ]
     
     # Convert percentages to whole numbers (0.50 -> 50)
     converted_hold_stocks = convert_percentages_to_whole_numbers(hold_stocks.copy())
@@ -302,8 +313,16 @@ def get_sell_avoidance():
             'last_update': None
         })
     
-    # Filter stocks with 0-2 stars
-    sell_stocks = [stock for stock in cached_data if stock.get('star_rating', 0) <= 2]
+    # Filter: everything else (sell)
+    # Includes: "★★" with peg >= 1.5, and all other ratings
+    sell_stocks = [
+        stock for stock in cached_data 
+        if not (
+            stock.get('quality_rating') == '★★★' or 
+            (stock.get('quality_rating') == '★★' and stock.get('forward_peg') is not None and stock.get('forward_peg') < 1.0) or
+            (stock.get('quality_rating') == '★★' and stock.get('peg_ratio') is not None and stock.get('peg_ratio') >= 1.0 and stock.get('peg_ratio') < 1.5)
+        )
+    ]
     
     # Convert percentages to whole numbers (0.50 -> 50)
     converted_sell_stocks = convert_percentages_to_whole_numbers(sell_stocks.copy())
@@ -464,9 +483,19 @@ def get_stats():
     
     # Calculate statistics
     total = len(cached_data)
-    buy_count = sum(1 for s in cached_data if s.get('star_rating', 0) >= 4)
-    hold_count = sum(1 for s in cached_data if s.get('star_rating', 0) == 3)
-    sell_count = sum(1 for s in cached_data if s.get('star_rating', 0) <= 2)
+    buy_count = sum(
+        1 for s in cached_data 
+        if s.get('quality_rating') == '★★★' or 
+           (s.get('quality_rating') == '★★' and s.get('forward_peg') is not None and s.get('forward_peg') < 1.0)
+    )
+    hold_count = sum(
+        1 for s in cached_data 
+        if s.get('quality_rating') == '★★' and 
+           s.get('peg_ratio') is not None and 
+           s.get('peg_ratio') >= 1.0 and 
+           s.get('peg_ratio') < 1.5
+    )
+    sell_count = total - buy_count - hold_count
     
     return jsonify({
         'total': total,

@@ -52,26 +52,32 @@ def build_unified_row(
     forward_peg = fwd_peg
     
     # Calculate individual star ratings for weighted scoring
-    s_gpa = get_star_rating(metrics['gp_a'], [0.15, 0.30, 0.45, 0.60], reverse=False) if metrics['gp_a'] else 0
-    s_roe = get_star_rating(info.get('returnOnEquity'), [0.10, 0.20, 0.30, 0.40], reverse=False) if info.get('returnOnEquity') else 0
-    s_pb = get_star_rating(info.get('priceToBook'), [5.0, 10.0, 15.0, 20.0], reverse=True) if info.get('priceToBook') else 0
-    s_fpeg = get_star_rating(forward_peg, [0.5, 1.0, 1.5, 2.0], reverse=True) if forward_peg else 0
+    s_gpa = get_star_rating(metrics['gp_a'], [0.1, 0.2, 0.3, 0.4], reverse=False) if metrics['gp_a'] else 0
+    s_roe = get_star_rating(info.get('returnOnEquity'), [0.05, 0.10, 0.20, 0.30], penalize_negative=True) if info.get('returnOnEquity') else 0
+    s_pb = get_star_rating(info.get('priceToBook'), [40.0, 20.0, 10.0, 5.0], reverse=True, penalize_negative=True) if info.get('priceToBook') else 0
+    s_fpeg = get_star_rating(forward_peg, [2.5, 2.0, 1.5, 1.0], reverse=True) if forward_peg else 0
     
-    # Calculate momentum star rating (6-month performance)
-    s_momentum = 0
-    if perf_6m is not None:
-        s_momentum = get_star_rating(perf_6m * 100, [-20.0, -5.0, 5.0, 20.0], reverse=False) if perf_6m >= -0.2 else 0
+    # Calculate momentum star rating (12-month performance)
+    s_momentum = get_star_rating(perf_12m, [0.0, 0.10, 0.25, 0.50]) if perf_12m is not None else 0
     
     # Calculate weighted scores (0-4.0 scale)
     nm_score = score_novy_marx_weighted(s_gpa, s_pb, s_momentum)
     mf_score = score_multi_factor_weighted(s_gpa, s_roe, s_pb, s_fpeg, s_momentum)
     
-    # Get star rating - prefer forward_peg if available (more forward-looking)
-    peg_for_rating = forward_peg if forward_peg is not None else gaap_peg
-    star_rating = get_star_rating(peg_for_rating, [0.5, 1.0, 1.5, 2.0], reverse=True)
+    # Get star rating from PEG ratio (forward_peg preferred for forward-looking view)
+    peg_for_star = forward_peg if forward_peg is not None else gaap_peg
+    star_rating_from_peg = get_star_rating(peg_for_star, [2.5, 2.0, 1.5, 1.0], reverse=True)
     
-    # Calculate quality rating based on weighted scores
+    # Calculate quality rating based on weighted scores (best of NM and MF)
     quality_rating = get_quality_rating(nm_score, mf_score)
+    
+    # Use the highest rating between PEG-based star rating and quality rating
+    # Convert quality rating to numeric for comparison
+    quality_to_numeric = {'★★★': 5, '★★': 4, '★': 3, '—': 1}
+    quality_rating_numeric = quality_to_numeric.get(quality_rating, 1)
+    
+    # Use the maximum of both ratings
+    star_rating = max(star_rating_from_peg, quality_rating_numeric)
     
     # Extract all available info fields for comprehensive data
     return {
