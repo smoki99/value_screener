@@ -109,12 +109,32 @@ function renderTable(tableId, data) {
             }
         }
         
+        // Determine price arrow based on 6-month and 12-month performance
+        let priceArrow = '';
+        const perf6m = stock.perf_6m !== null ? Number(stock.perf_6m) : null;
+        const perf12m = stock.perf_12m !== null ? Number(stock.perf_12m) : null;
+        
+        if (perf6m !== null && perf12m !== null) {
+            // Green arrow up: price higher than both 6-month and 12-month ago
+            if (perf6m > 0 && perf12m > 0) {
+                priceArrow = '<span class="arrow-up"></span>';
+            }
+            // Red arrow down: price lower than both 6-month and 12-month ago
+            else if (perf6m < 0 && perf12m < 0) {
+                priceArrow = '<span class="arrow-down"></span>';
+            }
+            // Yellow sideward arrow: mixed results (one positive, one negative)
+            else {
+                priceArrow = '<span class="arrow-sideways"></span>';
+            }
+        }
+        
         return `
         <tr onclick="showStockDetails('${stock.symbol}')" style="cursor: pointer;">
             <td><strong>${stock.symbol || 'N/A'}</strong></td>
             <td>${stock.company_name || stock.name || 'N/A'}</td>
             <td class="stars">${getStarsHTML(stock.star_rating)}</td>
-            <td>$${formatNumber(stock.price)}</td>
+            <td>$${formatNumber(stock.price)} ${priceArrow}</td>
             <td class="${forwardPegClass}">${formatNumber(stock.forward_peg, 2)} ${pegArrow}</td>
             <td>${formatNumber(stock.gp_a * 100, 1)}%</td>
             <td>${formatNumber(stock.roe * 100, 1)}%</td>
@@ -122,6 +142,7 @@ function renderTable(tableId, data) {
         </tr>`;
     }).join('');
 }
+
 
 
 // Create center text plugin for Chart.js doughnut charts
