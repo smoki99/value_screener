@@ -1,10 +1,10 @@
 # NASDAQ-100 Screener
 
-A Python-based stock screener that analyzes all NASDAQ-100 stocks using Novy-Marx and multi-factor scoring methodologies. Generates beautiful interactive HTML reports with comprehensive financial metrics.
+A Python-based stock screener with web interface that analyzes all NASDAQ-100 stocks using Novy-Marx and multi-factor scoring methodologies. Generates beautiful interactive HTML reports with comprehensive financial metrics, gauge charts, and candlestick visualizations.
 
 ## Overview
 
-This project fetches real-time data from Yahoo Finance for all 100 stocks in the NASDAQ-100 index, calculates various valuation and quality metrics, applies star ratings based on multiple factors, and produces an easy-to-read HTML report that categorizes stocks into "Buy", "Hold", and "Sell" recommendations.
+This project fetches real-time data from Yahoo Finance for all 100 stocks in the NASDAQ-100 index, calculates various valuation and quality metrics, applies star ratings based on multiple factors, and produces an easy-to-read HTML report that categorizes stocks into "Buy", "Hold", and "Sell" recommendations. It includes a Flask-based API server with REST endpoints for programmatic access to stock data.
 
 ## Features
 
@@ -33,29 +33,39 @@ Stocks are categorized into three groups:
 2. **Hold** (3 stars): Moderate recommendations requiring further analysis
 3. **Sell** (0-2 stars): Overvalued or low-quality stocks to avoid
 
+### Web Interface Features
+- Interactive tables with sortable columns and color-coded metrics
+- Gauge charts showing GP/A, Gross Margin, and ROE percentages
+- Candlestick charts with 50-day and 200-day Simple Moving Averages (SMA)
+- Real-time data refresh capability
+- Responsive design for desktop and mobile viewing
+
 ## Project Structure
 
 ```
-nasdaq100_screener/
-├── screener.py              # Main entry point
-├── requirements.txt         # Python dependencies
-├── modules/                 # Core functionality
-│   ├── __init__.py         # Package exports
-│   ├── config.py           # Configuration (DB path, cache settings)
-│   ├── cache.py            # SQLite caching layer for stock data
-│   ├── fetcher.py          # Yahoo Finance & Wikipedia data fetching
-│   ├── metrics.py          # Financial metric calculations
-│   ├── scoring.py          # Star rating and multi-factor scoring
-│   ├── ranking.py          # Percentile rank calculations
-│   ├── report.py           # Table generation and analysis
-│   └── html_report.py      # Beautiful HTML report generation
-├── tests/                   # Unit tests (67 passing)
-│   ├── test_cache.py       # Cache module tests
-│   ├── test_colors.py      # Color utility tests
-│   ├── test_config.py      # Configuration tests
-│   └── test_fetcher.py     # Fetcher module tests
-├── nasdaq100.db            # SQLite cache database (auto-generated)
-└── nasdaq100_analysis.html # Generated HTML report (auto-generated)
+value_screener/
+├── server.py              # Flask API server with REST endpoints
+├── frontend.html          # Web interface HTML file
+├── requirements.txt       # Python dependencies
+├── css/styles.css         # Frontend styles (responsive design)
+├── js/app.js             # Frontend JavaScript (Chart.js integration)
+├── modules/               # Core functionality
+│   ├── __init__.py       # Package exports
+│   ├── config.py         # Configuration (DB path, cache settings)
+│   ├── cache.py          # SQLite caching layer for stock data
+│   ├── fetcher.py        # Yahoo Finance & Wikipedia data fetching
+│   ├── metrics.py        # Financial metric calculations
+│   ├── scoring.py        # Star rating and multi-factor scoring
+│   ├── ranking.py        # Percentile rank calculations
+│   └── report.py         # Analysis and table generation
+├── tests/                 # Unit tests (67 passing)
+│   ├── test_cache.py     # Cache module tests
+│   ├── test_colors.py    # Color utility tests
+│   ├── test_config.py    # Configuration tests
+│   ├── test_fetcher.py   # Fetcher module tests
+│   └── test_metrics.py   # Metrics calculation tests
+├── nasdaq100_cache.db    # SQLite cache database (auto-generated)
+└── README.md             # This documentation file
 ```
 
 ## Current State
@@ -65,14 +75,18 @@ nasdaq100_screener/
 - Comprehensive metric calculations (valuation, quality, growth)
 - Multi-factor star rating system (Novy-Marx methodology)
 - Beautiful interactive HTML report generation
+- Flask-based API server with REST endpoints
 - SQLite-based caching to avoid repeated API calls
 - 67 passing unit tests covering core modules
 - Rate limiting for sustainable API usage
+- Gauge charts using Chart.js + datalabels plugin
+- Candlestick charts with moving averages (50-day, 200-day SMA)
 
 ### 📊 Key Statistics
-- **Test Coverage**: 67 tests across 4 test files (100% pass rate)
+- **Test Coverage**: 67 tests across multiple test files (100% pass rate)
 - **Cache Duration**: 24 hours default (configurable via CACHE_MAX_AGE_HOURS)
 - **Database**: SQLite with stock_cache and ticker_cache tables
+- **API Endpoints**: 10+ REST endpoints for programmatic access
 
 ## Installation
 
@@ -84,7 +98,7 @@ nasdaq100_screener/
 
 ```bash
 # Clone or navigate to the project directory
-cd nasdaq100_screener
+cd value_screener
 
 # Create virtual environment (recommended)
 python -m venv venv
@@ -101,18 +115,52 @@ pip install -r requirements.txt
 
 ## Usage
 
-### Run the Screener
+### Run the Web Server
 
 ```bash
-python screener.py
+python server.py
 ```
 
 This will:
-1. Fetch or load cached NASDAQ-100 ticker list from Wikipedia
-2. Analyze all 100 stocks (with rate limiting)
-3. Calculate metrics, scores, and rankings
-4. Generate a beautiful HTML report saved as `nasdaq100_analysis.html`
-5. Cache results in SQLite database for future runs
+1. Initialize SQLite cache database (nasdaq100_cache.db)
+2. Auto-refresh data if older than 24 hours
+3. Start Flask API server on http://localhost:5000
+4. Serve web interface at http://localhost:5000/
+
+### Access the Web Interface
+
+Open your browser and navigate to:
+- **Web Interface**: http://localhost:5000/
+- **API Endpoints**: See below for available endpoints
+
+### API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/health` | GET | Health check with cache status |
+| `/api/stocks` | GET | All stock data as JSON |
+| `/api/buy-recommendations` | GET | 4-5 star stocks (buy recommendations) |
+| `/api/hold-recommendations` | GET | 3 star stocks (hold recommendations) |
+| `/api/sell-avoidance` | GET | 0-2 star stocks (sell/avoid recommendations) |
+| `/api/stats` | GET | Summary statistics (total, buy, hold, sell counts) |
+| `/api/stock/{symbol}` | GET | Individual stock details by ticker symbol |
+| `/api/analyze` | POST | Trigger fresh analysis from Yahoo Finance |
+
+### Example API Usage
+
+```bash
+# Get all stocks
+curl http://localhost:5000/api/stocks
+
+# Get buy recommendations only
+curl http://localhost:5000/api/buy-recommendations
+
+# Get summary statistics
+curl http://localhost:5000/api/stats
+
+# Trigger fresh analysis
+curl -X POST http://localhost:5000/api/analyze
+```
 
 ### Run Tests
 
@@ -128,28 +176,41 @@ python -m pytest tests/
 
 Edit `modules/config.py` to customize:
 
-- **DB_PATH**: Location of SQLite cache database (default: `nasdaq100.db`)
+- **DB_PATH**: Location of SQLite cache database (default: `nasdaq100_cache.db`)
 - **CACHE_MAX_AGE_HOURS**: Cache expiration time in hours (default: 24)
+
+Example configuration:
+```python
+# modules/config.py
+DB_PATH = "nasdaq100_cache.db"
+CACHE_MAX_AGE_HOURS = 24
+```
 
 ## Dependencies
 
 Core dependencies from requirements.txt:
-- yfinance - Yahoo Finance data API
-- pandas - Data manipulation and analysis
-- requests - HTTP library for Wikipedia fetching
-- lxml - HTML parsing
+- **yfinance** - Yahoo Finance data API
+- **pandas** - Data manipulation and analysis
+- **requests** - HTTP library for Wikipedia fetching
+- **lxml** - HTML parsing
+- **Flask** - Web framework for API server
+- **flask-cors** - CORS support for frontend access
 
 Development dependencies:
-- pytest - Testing framework
+- **pytest** - Testing framework
 
 ## Output Example
 
-The generated HTML report includes:
-- **Summary Statistics**: Total stocks analyzed, buy/hold/sell counts
-- **Buy Recommendations Table**: 4-5 star stocks with detailed metrics
+The web interface includes:
+- **Summary Statistics**: Total stocks analyzed, buy/hold/sell counts with color-coded cards
+- **Buy Recommendations Table**: 4-5 star stocks with detailed metrics and sortable columns
 - **Hold Recommendations Table**: 3-star stocks requiring further analysis
 - **Sell Avoidance Table**: 0-2 star stocks to avoid
-- **Interactive Features**: Sortable columns, hover tooltips, color-coded values
+- **Interactive Features**:
+  - Click any stock row to view detailed information in a modal
+  - Gauge charts showing GP/A, Gross Margin, and ROE percentages
+  - Candlestick charts with moving averages (50-day, 200-day SMA)
+  - Color-coded values based on Novy-Marx thresholds
 
 ## Novy-Marx Methodology
 
@@ -157,6 +218,16 @@ This screener implements the Novy-Marx factor model which emphasizes:
 1. **Quality over Momentum**: Focus on fundamental quality metrics
 2. **Asset Growth Control Factor**: Adjusts for asset growth to avoid value traps
 3. **Multi-Factor Scoring**: Combines valuation, profitability, and quality into unified star ratings
+
+### Color Coding Thresholds
+
+| Metric | Green (Good) | Yellow (Moderate) | Red (Poor) |
+|--------|--------------|-------------------|------------|
+| GP/A | ≥30% | 15-30% | <15% |
+| Gross Margin | ≥50% | 30-50% | <30% |
+| ROE | ≥20% | 10-20% | <10% |
+| P/B Ratio | ≤5 | 5-15 | >15 |
+| PEG Ratio | ≤1.0 | 1.0-1.5 | >1.5 |
 
 ## License
 
@@ -166,5 +237,6 @@ This project is provided as-is for educational purposes.
 
 - The screener uses rate limiting (0.5 second delay between API calls) to avoid being blocked by Yahoo Finance
 - First run may take several minutes; subsequent runs are faster due to caching
-- HTML report includes timestamp of analysis and can be opened in any modern web browser
+- Web interface includes timestamp of analysis and can be opened in any modern web browser
+- SQLite database is not thread-safe, so the server runs with threading disabled for stability
 </parameter> } }</tool_call>
