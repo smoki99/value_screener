@@ -387,6 +387,11 @@ def get_stock_history(symbol):
         hist_data['sma_50'] = hist_data['Close'].rolling(window=50).mean()
         hist_data['sma_200'] = hist_data['Close'].rolling(window=200).mean()
         
+        # Calculate 52-week high and low (from the last 52 weeks of data)
+        recent_weeks = hist_data.tail(365)  # Last 365 days (~52 weeks)
+        fifty_two_week_high = recent_weeks['High'].max()
+        fifty_two_week_low = recent_weeks['Low'].min()
+        
         # Convert to list of dictionaries for JSON serialization
         history_list = []
         for date, row in hist_data.iterrows():
@@ -406,7 +411,9 @@ def get_stock_history(symbol):
             'symbol': symbol.upper(),
             'data': history_list,
             'count': len(history_list),
-            'period': '1 year'
+            'period': '2 years',
+            'fifty_two_week_high': float(fifty_two_week_high) if not pd.isna(fifty_two_week_high) else None,
+            'fifty_two_week_low': float(fifty_two_week_low) if not pd.isna(fifty_two_week_low) else None
         })
     except Exception as e:
         print(f"Error fetching historical data for {symbol}: {e}")

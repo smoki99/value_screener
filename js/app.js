@@ -182,7 +182,7 @@ async function fetchAndRenderChart(symbol) {
         if (loadingSpinner) loadingSpinner.style.display = 'none';
         
         // Render the chart using Lightweight Charts
-        renderCandlestickChart(symbol, result.data);
+        renderCandlestickChart(symbol, result.data, result);
         
     } catch (error) {
         console.error('Error fetching chart data:', error);
@@ -200,7 +200,7 @@ async function fetchAndRenderChart(symbol) {
 }
 
 // Render candlestick chart using Lightweight Charts
-function renderCandlestickChart(symbol, data) {
+function renderCandlestickChart(symbol, data, result) {
     const chartContainer = document.getElementById('chartWrapper');
     if (!chartContainer) return;
     
@@ -294,6 +294,38 @@ function renderCandlestickChart(symbol, data) {
         });
         
         sma200Series.setData(sma200Data);
+        
+        // Add 52-week high horizontal line (green dashed) using a constant line series
+        if (result.fifty_two_week_high !== null && result.fifty_two_week_high !== undefined) {
+            const fiftyTwoWeekHighSeries = chart.addSeries(LightweightCharts.LineSeries, {
+                color: '#3fb950', // Green
+                lineWidth: 2,
+                lineStyle: LightweightCharts.LineStyle.Dashed,
+                title: '52W High'
+            });
+            // Create a constant line at the high price level using first and last data points
+            const highLineData = [
+                { time: data[0].date, value: result.fifty_two_week_high },
+                { time: data[data.length - 1].date, value: result.fifty_two_week_high }
+            ];
+            fiftyTwoWeekHighSeries.setData(highLineData);
+        }
+        
+        // Add 52-week low horizontal line (red dashed) using a constant line series
+        if (result.fifty_two_week_low !== null && result.fifty_two_week_low !== undefined) {
+            const fiftyTwoWeekLowSeries = chart.addSeries(LightweightCharts.LineSeries, {
+                color: '#f85149', // Red
+                lineWidth: 2,
+                lineStyle: LightweightCharts.LineStyle.Dashed,
+                title: '52W Low'
+            });
+            // Create a constant line at the low price level using first and last data points
+            const lowLineData = [
+                { time: data[0].date, value: result.fifty_two_week_low },
+                { time: data[data.length - 1].date, value: result.fifty_two_week_low }
+            ];
+            fiftyTwoWeekLowSeries.setData(lowLineData);
+        }
         
         // Store chart reference for cleanup
         candlestickChart = chart;
