@@ -21,6 +21,10 @@ def calculate_gaap_peg(info: dict, financials: pd.DataFrame | None) -> float | N
     This is the BACKWARD-LOOKING PEG - uses actual historical performance
     to see how the company has grown in reality (not analyst estimates).
     
+    Why CAGR? Smooths multi-year volatility for realistic growth rate.
+    Single year changes can be noisy; geometric mean over multiple years
+    gives a more stable picture of sustainable growth.
+    
     Args:
         info: Stock info dictionary from yfinance
         financials: Financial statements DataFrame with 'Net Income' row
@@ -65,6 +69,15 @@ def calculate_forward_peg(info: dict, growth_estimates: dict | None) -> tuple[fl
     2. Dampening formula for info-based sources: only count first 30%
        fully, then add just 20% of excess (max 50%) - penalizes less
        reliable data sources that aren't analyst estimates.
+    
+    Data Source Cascade:
+    - GE-2Y: growth_estimates 2-year blend (most reliable)
+    - EE-2Y: earnings_estimate 2-year blend (second choice)
+    - info-based with dampening: single year, less reliable
+    
+    Why 2-year blend? More reliable than single year, reduces noise.
+    Single year changes can be volatile; geometric mean over 2 years
+    gives a more stable picture of expected sustainable growth.
     
     Args:
         info: Stock info dictionary from yfinance
@@ -124,7 +137,9 @@ def get_peg_values(info: dict, financials: pd.DataFrame | None, growth_estimates
     """
     fwd_peg, growth_used, peg_source = calculate_forward_peg(info, growth_estimates)
 
-    # Sanity check: discard extreme values
+    # Sanity check: discard extreme values for data quality
+    # PEG < 0 indicates no profit situation (invalid ratio)
+    # PEG > 50 suggests calculation issue or extreme anomaly
     if fwd_peg is not None and (fwd_peg < 0 or fwd_peg > 50):
         fwd_peg = None
 
@@ -187,6 +202,7 @@ def compute_metrics(
     fwd_peg, gaap_peg, growth_used, peg_source = get_peg_values(info, financials, growth_estimates)
     
     # Calculate GP/A (Gross Profit / Total Assets)
+    # Novy-Marx paper: Gross Profitability predicts future returns better than other factors
     gp_a = None
     gross_margin = None
     try:
