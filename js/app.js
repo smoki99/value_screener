@@ -455,6 +455,14 @@ function showStockDetails(symbol) {
             <!-- Quick Stats Row -->
             <div class="quick-stats-row">
                 <div class="stat-item">
+                    <div class="stat-label">Forward P/E</div>
+                    <div class="stat-value">${formatNumber(stock.forward_pe, 2)}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Trailing P/E</div>
+                    <div class="stat-value">${formatNumber(stock.pe_ratio, 2)}</div>
+                </div>
+                <div class="stat-item">
                     <div class="stat-label">Forward PEG</div>
                     <div class="stat-value ${getColorClass(stock.forward_peg, 'peg')}">${formatNumber(stock.forward_peg, 2)}</div>
                 </div>
