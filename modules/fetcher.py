@@ -4,6 +4,7 @@ Data fetching from Yahoo Finance and Wikipedia.
 Handles all external API calls for stock data retrieval.
 """
 
+import time
 import yfinance as yf
 import pandas as pd
 import requests
