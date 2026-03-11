@@ -134,6 +134,7 @@ function renderTable(tableId, data) {
             <td><strong>${stock.symbol || 'N/A'}</strong></td>
             <td>${stock.company_name || stock.name || 'N/A'}</td>
             <td class="stars">${getStarsHTML(stock.star_rating)}</td>
+            <td class="quality-rating">${stock.quality_rating || '-'}</td>
             <td>$${formatNumber(stock.price)} ${priceArrow}</td>
             <td class="${forwardPegClass}">${formatNumber(stock.forward_peg, 2)} ${pegArrow}</td>
             <td>${formatNumber(stock.gp_a * 100, 1)}%</td>
@@ -836,4 +837,3 @@ function getFCFCoverageClass(freeCashFlow, dividendRate, marketCap, price) {
     if (ratio >= 0.5) return 'c-yellow';
     return 'c-red';
 }
-

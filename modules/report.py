@@ -39,7 +39,8 @@ def build_unified_row(
         score_multi_factor,
         score_novy_marx_weighted,
         score_multi_factor_weighted,
-        get_star_rating
+        get_star_rating,
+        get_quality_rating
     )
     from .fetcher import calculate_asset_growth
     
@@ -68,6 +69,9 @@ def build_unified_row(
     # Get star rating - prefer forward_peg if available (more forward-looking)
     peg_for_rating = forward_peg if forward_peg is not None else gaap_peg
     star_rating = get_star_rating(peg_for_rating, [0.5, 1.0, 1.5, 2.0], reverse=True)
+    
+    # Calculate quality rating based on weighted scores
+    quality_rating = get_quality_rating(nm_score, mf_score)
     
     # Extract all available info fields for comprehensive data
     return {
@@ -139,6 +143,7 @@ def build_unified_row(
         'nm_score': nm_score,
         'mf_score': mf_score,
         'star_rating': star_rating,
+        'quality_rating': quality_rating,
         
         # PEG source tracking
         'growth_used': growth_used,
