@@ -33,6 +33,7 @@ td .stars {
 .modal-body .stars {
     color: #ffc107 !important;
     font-size: 2.5rem !important;
+    padding-bottom: 0.5rem !important;
 }
 
 .price-up {
@@ -177,6 +178,8 @@ table th:hover {
     margin-bottom: 1.5rem;
     padding-bottom: 1.5rem;
     border-bottom: 1px solid #e9ecef;
+    padding-left: 2rem;
+    padding-right: 2rem;
 }
 
 .section:last-child {
@@ -271,7 +274,7 @@ table th:hover {
 .quick-stats-row {
     display: flex;
     gap: 1.5rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0rem;
     padding: 1rem;
     background-color: #f8f9fa;
     border-radius: 8px;
@@ -397,9 +400,9 @@ table th:hover {
 .chart-container {
     width: 100%;
     height: 400px;
-    background-color: #f8f9fa;
+    /*background-color: #f8f9fa;*/
     border-radius: 8px;
-    padding: 1rem;
+        /*padding: 1rem;*/
     margin-bottom: 1.5rem;
 }
 
@@ -464,6 +467,12 @@ table th:hover {
 .main-chart-area {
     flex: 1;
     min-width: 0;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+}
+
+.tv-lightweight-charts {
+    border-radius: 8px; 
 }
 
 /* Compact gauge container for vertical panel */
@@ -608,6 +617,8 @@ table th:hover {
     display: flex !important;
     gap: 1rem !important;
     align-items: stretch !important;
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
 }
 
 /* Ensure gauge-stack-item provides proper containment */
