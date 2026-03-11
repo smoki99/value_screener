@@ -369,9 +369,26 @@ def get_stock_history(symbol):
         import yfinance as yf
         from datetime import timedelta
         
-        # Calculate date range for 2 years of data (to ensure complete 200-day SMA throughout chart)
+        # Parse period query parameter (e.g., ?period=3y for 3 years)
+        from flask import request
+        period_param = request.args.get('period', '2y')  # Default to 2 years
+        
+        # Calculate days based on period value
+        try:
+            if period_param.endswith('y'):  # Years (e.g., "1y", "3y")
+                years = int(period_param[:-1])
+                days = years * 365
+            elif period_param.endswith('w'):  # Weeks (e.g., "52w")
+                weeks = int(period_param[:-1])
+                days = weeks * 7
+            else:
+                days = 730  # Default to 2 years if invalid format
+        except ValueError:
+            days = 730  # Default to 2 years if parsing fails
+        
+        # Calculate date range based on period parameter
         end_date = datetime.now()
-        start_date = end_date - timedelta(days=730)  # 2 years
+        start_date = end_date - timedelta(days=days)
         
         # Fetch historical data from Yahoo Finance
         ticker = yf.Ticker(symbol.upper())

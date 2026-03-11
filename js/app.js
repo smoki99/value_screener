@@ -166,7 +166,7 @@ async function fetchAndRenderChart(symbol) {
     
     try {
         // Fetch historical data from API
-        const response = await fetch(`${API_BASE}/api/stock/${symbol}/history`);
+        const response = await fetch(`${API_BASE}/api/stock/${symbol}/history?period=3y`);
         
         if (!response.ok) {
             throw new Error(`Failed to fetch chart data: ${response.status}`);
