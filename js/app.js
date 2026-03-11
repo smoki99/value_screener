@@ -509,7 +509,7 @@ function showStockDetails(symbol) {
                 <div class="stat-item">
                     <div class="stat-label">Dividend Yield</div>
                     <div class="stat-value ${getFCFCoverageClass(stock.free_cash_flow, stock.dividend_rate, stock.market_cap, stock.price)}">${formatNumber(stock.dividend_yield * 100, 2)}%</div>
-                </div
+                </div>
                 <div class="stat-item">
                     <div class="stat-label">Quality Score (NM)</div>
                     <div class="stat-value">${formatNumber(stock.nm_score, 1)}</div>
