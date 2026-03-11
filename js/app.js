@@ -33,21 +33,15 @@ document.getElementById('refreshBtn').addEventListener('click', async function()
     }
 });
 
-// Stock search button handler
-document.getElementById('stockSearchBtn').addEventListener('click', function() {
-    const searchTerm = document.getElementById('stockSearchInput').value.trim().toLowerCase();
+// Real-time search as you type - no button or Enter needed
+document.getElementById('stockSearchInput').addEventListener('keyup', function() {
+    const searchTerm = this.value.trim().toLowerCase();
     if (searchTerm) {
         searchStocks(searchTerm);
-    }
-});
-
-// Allow Enter key to trigger search
-document.getElementById('stockSearchInput').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        const searchTerm = this.value.trim().toLowerCase();
-        if (searchTerm) {
-            searchStocks(searchTerm);
-        }
+    } else {
+        // Clear results and show all data when input is empty
+        renderTable('allTableBody', allData);
+        document.getElementById('searchResultsCount').textContent = '';
     }
 });
 
