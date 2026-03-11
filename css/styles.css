@@ -69,6 +69,27 @@ table th:hover {
 .perf-pos { color: #3fb950; }
 .perf-neg { color: #f85149; }
 
+/* Arrow indicators for Forward PEG comparison */
+.arrow-up {
+    display: inline-block;
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-bottom: 8px solid #3fb950;
+    margin-right: 4px;
+}
+
+.arrow-down {
+    display: inline-block;
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 8px solid #f85149;
+    margin-right: 4px;
+}
+
 /* Modal Styles */
 .modal-overlay {
     display: none;

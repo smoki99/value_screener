@@ -464,7 +464,7 @@ function showStockDetails(symbol) {
                 </div>
                 <div class="stat-item">
                     <div class="stat-label">Forward PEG</div>
-                    <div class="stat-value ${getColorClass(stock.forward_peg, 'peg')}">${formatNumber(stock.forward_peg, 2)}</div>
+                    <div class="stat-value ${getColorClass(stock.forward_peg, 'peg')}">${stock.forward_peg != null && stock.peg_ratio != null ? (stock.forward_peg < stock.peg_ratio ? '<span class="arrow-up"></span>' : '<span class="arrow-down"></span>') : ''}${formatNumber(stock.forward_peg, 2)}</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-label">Trailing PEG</div>
