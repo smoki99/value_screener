@@ -109,10 +109,12 @@ function renderTable(tableId, data) {
     `).join('');
 }
 
-// Create gauge chart using Chart.js
-function createGaugeChart(canvasId, value, label) {
-    const ctx = document.getElementById(canvasId);
-    if (!ctx) return null;
+// Create gauge chart using Chart.js - FIXED to prevent absolute positioning wrappers
+function createGaugeChart(canvasElement, value, label) {
+    if (!canvasElement) return null;
+    
+    // Use canvas element's ID as key for cleanup
+    const canvasId = canvasElement.id || 'gauge_' + Math.random().toString(36).substr(2, 9);
     
     // Destroy existing chart if any
     if (gaugeCharts[canvasId]) {
@@ -120,14 +122,14 @@ function createGaugeChart(canvasId, value, label) {
     }
     
     // Determine color based on value thresholds
-    let arcColor, centerColor;
+    let arcColor;
     const v = Number(value);
     
-    if (v >= 30) { arcColor = '#3fb950'; centerColor = '#3fb950'; } // Green
-    else if (v >= 15) { arcColor = '#d29922'; centerColor = '#d29922'; } // Yellow
-    else { arcColor = '#f85149'; centerColor = '#f85149'; } // Red
+    if (v >= 30) { arcColor = '#3fb950'; } // Green
+    else if (v >= 15) { arcColor = '#d29922'; } // Yellow
+    else { arcColor = '#f85149'; } // Red
     
-    const chart = new Chart(ctx, {
+    const chart = new Chart(canvasElement, {
         type: 'doughnut',
         data: {
             labels: ['Value', 'Remaining'],
@@ -141,9 +143,14 @@ function createGaugeChart(canvasId, value, label) {
             }]
         },
         options: {
-            responsive: true,
-            maintainAspectRatio: false,
+            responsive: false,
+            maintainAspectRatio: false, // CRITICAL: Prevent Chart.js from creating absolute positioning wrappers
+            aspectRatio: 1,
             cutout: '75%',
+            layout: {
+                padding: 0,
+                autoPadding: false // CRITICAL: Disable auto-padding that causes overflow
+            },
             plugins: {
                 legend: { display: false },
                 tooltip: { enabled: false }
@@ -399,21 +406,58 @@ function showStockDetails(symbol) {
                 </div>
             </div>
             
-            <!-- Chart Container -->
+            <!-- Chart with Gauges Container - Side by side layout -->
             <div id="chartContainer" class="chart-container">
                 <div id="chartLoadingSpinner" class="chart-loading-spinner">
                     <p>Loading chart data...</p>
                 </div>
                 <div id="chartErrorMessage" class="chart-error-message"></div>
-                <div id="chartWrapper" class="chart-wrapper"></div>
-                <div class="chart-legend">
-                    <div class="legend-item">
-                        <span class="legend-line legend-line-50"></span>
-                        <span>50-Day SMA</span>
+                
+                <!-- Main container with chart (left) and gauges panel (right) -->
+                <div class="chart-with-gauges-container">
+                    <!-- Left side: Candlestick chart -->
+                    <div class="main-chart-area">
+                        <div id="chartWrapper" class="chart-wrapper"></div>
+                        <div class="chart-legend">
+                            <div class="legend-item">
+                                <span class="legend-line legend-line-50"></span>
+                                <span>50-Day SMA</span>
+                            </div>
+                            <div class="legend-item">
+                                <span class="legend-line legend-line-200"></span>
+                                <span>200-Day SMA</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="legend-item">
-                        <span class="legend-line legend-line-200"></span>
-                        <span>200-Day SMA</span>
+                    
+                    <!-- Right side: Vertical gauge panel -->
+                    <div class="vertical-gauge-panel">
+                        <!-- GP/A Gauge (top) -->
+                        <div class="gauge-stack-item">
+                            <span class="gauge-stack-label">GP/A</span>
+                            <div class="compact-gauge-container">
+                                <canvas id="gaugeGPA"></canvas>
+                                <div class="gauge-stack-value">${formatNumber(stock.gp_a * 100, 1)}%</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Gross Margin Gauge (middle) -->
+                        <div class="gauge-stack-item">
+                            <span class="gauge-stack-label">Gross Margin</span>
+                            <div class="compact-gauge-container">
+                                <canvas id="gaugeGM"></canvas>
+                                <div class="gauge-stack-value">${formatNumber(stock.gross_margin * 100, 1)}%</div>
+                            </div>
+                        </div>
+                        
+                        <!-- ROE Gauge (bottom) -->
+                        <div class="gauge-stack-item">
+                            <span class="gauge-stack-label">ROE</span>
+                            <div class="compact-gauge-container">
+                                <canvas id="gaugeROE"></canvas>
+                                <div class="gauge-stack-value">${formatNumber(stock.roe * 100, 1)}%</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -435,25 +479,6 @@ function showStockDetails(symbol) {
                 <div class="stat-item">
                     <div class="stat-label">Quality Score (NM)</div>
                     <div class="stat-value">${formatNumber(stock.nm_score, 1)}</div>
-                </div>
-            </div>
-            
-            <!-- Gauge Charts Section -->
-            <div class="gauge-charts-section">
-                <div class="gauge-container">
-                    <canvas id="gaugeGPA"></canvas>
-                    <div class="gauge-value">${formatNumber(stock.gp_a * 100, 1)}%</div>
-                    <div class="gauge-label">GP/A</div>
-                </div>
-                <div class="gauge-container">
-                    <canvas id="gaugeGM"></canvas>
-                    <div class="gauge-value">${formatNumber(stock.gross_margin * 100, 1)}%</div>
-                    <div class="gauge-label">Gross Margin</div>
-                </div>
-                <div class="gauge-container">
-                    <canvas id="gaugeROE"></canvas>
-                    <div class="gauge-value">${formatNumber(stock.roe * 100, 1)}%</div>
-                    <div class="gauge-label">ROE</div>
                 </div>
             </div>
             
@@ -520,11 +545,15 @@ function showStockDetails(symbol) {
         fetchAndRenderChart(stock.symbol);
     }, 100);
     
-    // Create gauge charts after modal is shown
+    // Create gauge charts after modal is shown - FIXED to pass canvas elements directly
     setTimeout(() => {
-        createGaugeChart('gaugeGPA', stock.gp_a * 100, 'GP/A');
-        createGaugeChart('gaugeGM', stock.gross_margin * 100, 'Gross Margin');
-        createGaugeChart('gaugeROE', stock.roe * 100, 'ROE');
+        const gaugeGPA = document.getElementById('gaugeGPA');
+        const gaugeGM = document.getElementById('gaugeGM');
+        const gaugeROE = document.getElementById('gaugeROE');
+        
+        if (gaugeGPA) createGaugeChart(gaugeGPA, stock.gp_a * 100, 'GP/A');
+        if (gaugeGM) createGaugeChart(gaugeGM, stock.gross_margin * 100, 'Gross Margin');
+        if (gaugeROE) createGaugeChart(gaugeROE, stock.roe * 100, 'ROE');
     }, 200);
 }
 

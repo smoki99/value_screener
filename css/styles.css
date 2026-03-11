@@ -88,7 +88,7 @@ table th:hover {
     background-color: white;
     border-radius: 12px;
     width: 90%;
-    max-width: 850px;
+    max-width: 1200px;
     margin: 30px 0;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
 }
@@ -403,3 +403,164 @@ table th:hover {
     height: 100%;
 }
 
+/* Chart with Gauges Layout - Side by side container */
+.chart-with-gauges-container {
+    display: flex;
+    gap: 1rem;
+    align-items: stretch;
+}
+
+/* Main chart area (left side) */
+.main-chart-area {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Compact gauge container for vertical panel */
+.compact-gauge-container {
+    position: relative !important; /* Critical: provides positioning context for Chart.js absolute positioning */
+    width: 100px !important;
+    height: 100px !important;
+    margin: 0 auto !important;
+    overflow: hidden !important; /* Prevents canvas from breaking out of container */
+}
+
+/* Target ANY div inside compact-gauge-container - Chart.js creates wrapper divs with inline styles */
+.compact-gauge-container > div {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+}
+
+/* Also target canvas directly to prevent Chart.js from positioning it absolutely */
+.compact-gauge-container > div > canvas {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+}
+
+/* Force canvas elements to respect container size - prevents Chart.js from resizing */
+.compact-gauge-container canvas {
+    max-width: 100px !important;
+    max-height: 100px !important;
+    width: 100px !important;
+    height: 100px !important;
+}
+
+/* Gauge stack item wrapper */
+.gauge-stack-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.gauge-stack-label {
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 4px;
+    text-align: center;
+}
+
+.gauge-stack-value {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1rem;
+    font-weight: bold;
+    color: #333;
+}
+
+/* CRITICAL FIX: Prevent Chart.js from positioning canvas absolutely at modal level */
+#chartContainer .compact-gauge-container canvas,
+#chartContainer .compact-gauge-container > div canvas {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+}
+
+/* Also prevent any wrapper divs from breaking out */
+#chartContainer .compact-gauge-container > div,
+#chartContainer .gauge-stack-item > .compact-gauge-container > div {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+}
+
+/* ULTRA-CRITICAL FIX: Target ANY div with inline absolute positioning inside compact-gauge-container */
+.compact-gauge-container > div[style*="position: absolute"],
+.compact-gauge-container > div[style*="left:"],
+.compact-gauge-container > div[style*="top:"] {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+}
+
+/* Also target canvas elements with inline positioning */
+.compact-gauge-container canvas[style*="position:"],
+.compact-gauge-container > div canvas[style*="left:"] {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+}
+
+/* Force all elements inside compact-gauge-container to stay in normal flow */
+.compact-gauge-container * {
+    float: none !important;
+}
+
+/* ULTRA-CRITICAL: Override ANY inline style that tries to position elements absolutely */
+.vertical-gauge-panel [style*="position: absolute"],
+.vertical-gauge-panel [style*="left:"],
+.vertical-gauge-panel [style*="top:"] {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+}
+
+/* RESPONSIVE ADJUSTMENTS FOR SMALLER SCREENS */
+@media (max-width: 900px) {
+    .chart-with-gauges-container {
+        flex-direction: column;
+    }
+    
+    .vertical-gauge-panel {
+        width: auto !important;
+        flex-direction: row !important;
+        justify-content: center !important;
+        padding: 1rem !important;
+    }
+}
+
+/* ============================================
+   CONSOLIDATED VERTICAL GAUGE PANEL STYLES
+   All properties in one block - placed at end for precedence
+   ============================================ */
+.vertical-gauge-panel {
+    width: 200px !important;
+    max-width: 200px !important;
+    background-color: #f8f9fa !important;
+    border-radius: 8px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    box-sizing: border-box !important;
+    position: relative !important; /* Critical: provides positioning context for Chart.js absolute positioning */
+    contain: layout style paint !important; /* CSS containment to prevent child overflow */
+}
+
+/* Ensure chart-with-gauges-container provides proper flex containment */
+.chart-with-gauges-container {
+    display: flex !important;
+    gap: 1rem !important;
+    align-items: stretch !important;
+}
+
+/* Ensure gauge-stack-item provides proper containment */
+.gauge-stack-item {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+}
