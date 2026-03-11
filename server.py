@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 from flask import Flask, jsonify, send_file
 from flask_cors import CORS
 import math
+import pandas as pd
 
 # Add modules to path
 sys.path.insert(0, '.')
@@ -350,6 +351,71 @@ def get_stock_by_symbol(symbol):
         'data': converted_stock,
         'last_update': cache_timestamp
     })
+
+
+@app.route('/api/stock/<symbol>/history')
+def get_stock_history(symbol):
+    """
+    Get historical price data for a stock with moving averages.
+    GET /api/stock/{symbol}/history
+    
+    Fetches 1 year of OHLCV data from Yahoo Finance and calculates:
+    - 50-day Simple Moving Average (SMA)
+    - 200-day Simple Moving Average (SMA)
+    
+    Returns JSON with dates, open/high/low/close/volume + moving averages
+    """
+    try:
+        import yfinance as yf
+        from datetime import timedelta
+        
+        # Calculate date range for 2 years of data (to ensure complete 200-day SMA throughout chart)
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=730)  # 2 years
+        
+        # Fetch historical data from Yahoo Finance
+        ticker = yf.Ticker(symbol.upper())
+        hist_data = ticker.history(start=start_date, end=end_date)
+        
+        if hist_data.empty:
+            return jsonify({
+                'error': 'No historical data found',
+                'message': f'Could not fetch 1 year of price history for {symbol}'
+            }), 404
+        
+        # Calculate Simple Moving Averages (SMA)
+        hist_data['sma_50'] = hist_data['Close'].rolling(window=50).mean()
+        hist_data['sma_200'] = hist_data['Close'].rolling(window=200).mean()
+        
+        # Convert to list of dictionaries for JSON serialization
+        history_list = []
+        for date, row in hist_data.iterrows():
+            entry = {
+                'date': date.strftime('%Y-%m-%d'),
+                'open': float(row['Open']) if not pd.isna(row['Open']) else None,
+                'high': float(row['High']) if not pd.isna(row['High']) else None,
+                'low': float(row['Low']) if not pd.isna(row['Low']) else None,
+                'close': float(row['Close']) if not pd.isna(row['Close']) else None,
+                'volume': int(row['Volume']) if not pd.isna(row['Volume']) else 0,
+                'sma_50': float(row['sma_50']) if not pd.isna(row['sma_50']) else None,
+                'sma_200': float(row['sma_200']) if not pd.isna(row['sma_200']) else None
+            }
+            history_list.append(entry)
+        
+        return jsonify({
+            'symbol': symbol.upper(),
+            'data': history_list,
+            'count': len(history_list),
+            'period': '1 year'
+        })
+    except Exception as e:
+        print(f"Error fetching historical data for {symbol}: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'error': 'Failed to fetch historical data',
+            'message': str(e)
+        }), 500
 
 
 @app.route('/api/stats')

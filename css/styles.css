@@ -342,3 +342,64 @@ table th:hover {
         min-width: 120px;
     }
 }
+
+/* Chart Container Styles */
+.chart-container {
+    width: 100%;
+    height: 400px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.chart-wrapper {
+    width: 100%;
+    height: 350px;
+    position: relative;
+}
+
+.chart-loading-spinner {
+    display: none;
+    text-align: center;
+    padding: 2rem;
+    color: #667eea;
+}
+
+.chart-error-message {
+    display: none;
+    background-color: rgba(248, 81, 73, 0.1);
+    border-left: 4px solid #f85149;
+    padding: 1rem;
+    margin: 1rem 0;
+    color: #666;
+}
+
+.chart-legend {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.legend-line {
+    width: 24px;
+    height: 3px;
+}
+
+.legend-line-50 { background-color: #ff9800; }
+.legend-line-200 { background-color: #2196f3; }
+
+/* Lightweight Charts custom styling */
+.lightweight-charts-container {
+    width: 100%;
+    height: 100%;
+}
+

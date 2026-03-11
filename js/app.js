@@ -13,6 +13,7 @@ let sortDirection = 'asc';
 
 // Chart instances for cleanup
 let gaugeCharts = {};
+let candlestickChart = null;
 
 // Fetch all data on page load
 document.addEventListener('DOMContentLoaded', function() {
@@ -154,6 +155,160 @@ function createGaugeChart(canvasId, value, label) {
     return chart;
 }
 
+// Fetch and render candlestick chart with moving averages
+async function fetchAndRenderChart(symbol) {
+    const chartContainer = document.getElementById('chartContainer');
+    if (!chartContainer) return;
+    
+    // Show loading spinner
+    const loadingSpinner = document.getElementById('chartLoadingSpinner');
+    if (loadingSpinner) loadingSpinner.style.display = 'block';
+    
+    try {
+        // Fetch historical data from API
+        const response = await fetch(`${API_BASE}/api/stock/${symbol}/history`);
+        
+        if (!response.ok) {
+            throw new Error(`Failed to fetch chart data: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.error || !result.data || result.data.length === 0) {
+            throw new Error(result.message || 'No historical data available');
+        }
+        
+        // Hide loading spinner
+        if (loadingSpinner) loadingSpinner.style.display = 'none';
+        
+        // Render the chart using Lightweight Charts
+        renderCandlestickChart(symbol, result.data);
+        
+    } catch (error) {
+        console.error('Error fetching chart data:', error);
+        
+        // Hide loading spinner
+        if (loadingSpinner) loadingSpinner.style.display = 'none';
+        
+        // Show error message
+        const errorMessage = document.getElementById('chartErrorMessage');
+        if (errorMessage) {
+            errorMessage.textContent = `Failed to load chart: ${error.message}`;
+            errorMessage.style.display = 'block';
+        }
+    }
+}
+
+// Render candlestick chart using Lightweight Charts
+function renderCandlestickChart(symbol, data) {
+    const chartContainer = document.getElementById('chartWrapper');
+    if (!chartContainer) return;
+    
+    // Destroy existing chart if any
+    if (candlestickChart) {
+        candlestickChart.remove();
+        candlestickChart = null;
+    }
+    
+    try {
+        // Check if Lightweight Charts is loaded
+        if (typeof LightweightCharts === 'undefined') {
+            throw new Error('Lightweight Charts library not loaded');
+        }
+        
+        console.log('Creating chart with Lightweight Charts version:', typeof LightweightCharts);
+        
+        // Create new Lightweight Charts instance
+        const chart = LightweightCharts.createChart(chartContainer, {
+            width: chartContainer.clientWidth,
+            height: 350,
+            layout: {
+                background: { type: 'solid', color: '#f8f9fa' },
+                textColor: '#666',
+            },
+            grid: {
+                vertLines: { color: 'rgba(217, 217, 217, 0.3)' },
+                horzLines: { color: 'rgba(217, 217, 217, 0.3)' },
+            },
+            crosshair: {
+                mode: LightweightCharts.CrosshairMode.Normal,
+            },
+            rightPriceScale: {
+                borderColor: 'rgba(197, 203, 206, 0.8)',
+            },
+            timeScale: {
+                borderColor: 'rgba(197, 203, 206, 0.8)',
+                timeVisible: true,
+                secondsVisible: false,
+            },
+        });
+        
+        // Prepare candlestick data
+        const candleData = data.map(d => ({
+            time: d.date,
+            open: d.open,
+            high: d.high,
+            low: d.low,
+            close: d.close,
+        }));
+        
+        console.log('Candle data sample:', candleData[0]);
+        
+        // Create candlestick series using addSeries with type
+        const candleSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
+            upColor: '#26a69a',
+            downColor: '#ef5350',
+            borderVisible: false,
+            wickUpColor: '#26a69a',
+            wickDownColor: '#ef5350',
+        });
+        
+        candleSeries.setData(candleData);
+        
+        // Prepare 50-day SMA data
+        const sma50Data = data.filter(d => d.sma_50 !== null).map(d => ({
+            time: d.date,
+            value: d.sma_50,
+        }));
+        
+        // Create 50-day SMA line series (orange)
+        const sma50Series = chart.addSeries(LightweightCharts.LineSeries, {
+            color: '#ff9800',
+            lineWidth: 2,
+            title: 'SMA 50',
+        });
+        
+        sma50Series.setData(sma50Data);
+        
+        // Prepare 200-day SMA data
+        const sma200Data = data.filter(d => d.sma_200 !== null).map(d => ({
+            time: d.date,
+            value: d.sma_200,
+        }));
+        
+        // Create 200-day SMA line series (blue)
+        const sma200Series = chart.addSeries(LightweightCharts.LineSeries, {
+            color: '#2196f3',
+            lineWidth: 2,
+            title: 'SMA 200',
+        });
+        
+        sma200Series.setData(sma200Data);
+        
+        // Store chart reference for cleanup
+        candlestickChart = chart;
+        console.log('Chart created successfully');
+        
+    } catch (error) {
+        console.error('Error rendering chart:', error);
+        const errorMessage = document.getElementById('chartErrorMessage');
+        if (errorMessage) {
+            errorMessage.textContent = `Failed to render chart: ${error.message}`;
+            errorMessage.style.display = 'block';
+        }
+    }
+}
+
 // Show stock details modal with professional layout and gauge charts
 function showStockDetails(symbol) {
     // Find the stock in all data arrays
@@ -173,7 +328,7 @@ function showStockDetails(symbol) {
     if (marketCap > 10e9) { marketCapClass = 'market-cap-green'; } // > $10B green
     else if (marketCap > 2e9) { marketCapClass = 'market-cap-yellow'; } // > $2B yellow
     
-    // Build modal content with new professional layout
+    // Build modal content with new professional layout including chart container
     const modalContent = `
         <div class="modal-header">
             <h2>${stock.symbol} - ${stock.company_name || stock.name}</h2>
@@ -196,6 +351,25 @@ function showStockDetails(symbol) {
                     <span class="info-item"><span class="info-label">Sector:</span> ${stock.sector || 'N/A'}</span>
                     <span class="info-item"><span class="info-label">Industry:</span> ${stock.industry || 'N/A'}</span>
                     <span class="info-item"><span class="info-label">Employees:</span> ${formatNumber(stock.full_time_employees)}</span>
+                </div>
+            </div>
+            
+            <!-- Chart Container -->
+            <div id="chartContainer" class="chart-container">
+                <div id="chartLoadingSpinner" class="chart-loading-spinner">
+                    <p>Loading chart data...</p>
+                </div>
+                <div id="chartErrorMessage" class="chart-error-message"></div>
+                <div id="chartWrapper" class="chart-wrapper"></div>
+                <div class="chart-legend">
+                    <div class="legend-item">
+                        <span class="legend-line legend-line-50"></span>
+                        <span>50-Day SMA</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-line legend-line-200"></span>
+                        <span>200-Day SMA</span>
+                    </div>
                 </div>
             </div>
             
@@ -296,12 +470,17 @@ function showStockDetails(symbol) {
     document.getElementById('modalContent').innerHTML = modalContent;
     document.getElementById('stockModal').style.display = 'flex';
     
+    // Fetch and render candlestick chart after modal is shown
+    setTimeout(() => {
+        fetchAndRenderChart(stock.symbol);
+    }, 100);
+    
     // Create gauge charts after modal is shown
     setTimeout(() => {
         createGaugeChart('gaugeGPA', stock.gp_a * 100, 'GP/A');
         createGaugeChart('gaugeGM', stock.gross_margin * 100, 'Gross Margin');
         createGaugeChart('gaugeROE', stock.roe * 100, 'ROE');
-    }, 100);
+    }, 200);
 }
 
 // Close modal and cleanup charts
