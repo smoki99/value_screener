@@ -1,7 +1,7 @@
 """
 Report generation and analysis functions.
 
-Builds unified rows, prints tables, generates HTML reports, and analyzes NASDAQ-100 data.
+Builds unified rows with comprehensive stock data for flexible frontend use.
 """
 
 import pandas as pd
@@ -17,7 +17,9 @@ def build_unified_row(
     perf_12m: float | None,
     growth_estimates: dict
 ) -> Dict[str, Any]:
-    """Build a unified row of data for a stock.
+    """Build a comprehensive unified row of data for a stock.
+    
+    Includes all available metrics and fields for flexible frontend display.
     
     Args:
         symbol: Stock ticker symbol
@@ -35,7 +37,7 @@ def build_unified_row(
     from .scoring import score_novy_marx, score_multi_factor, get_star_rating
     from .fetcher import calculate_asset_growth
     
-    # Compute metrics - this includes gp_a calculation
+    # Compute metrics - this includes gp_a calculation and all other metrics
     metrics = compute_metrics(info, financials, balance_sheet, perf_6m, perf_12m, growth_estimates)
     
     # Get PEG values with source tracking
@@ -47,31 +49,94 @@ def build_unified_row(
     mf_score = score_multi_factor(info, financials, balance_sheet, perf_6m, perf_12m, growth_estimates)
     
     # Get star rating - prefer forward_peg if available (more forward-looking)
-    # PEG thresholds: <=0.5=5★, <=1.0=4★, <=1.5=3★, <=2.0=2★, >2.0=1★
     peg_for_rating = forward_peg if forward_peg is not None else gaap_peg
     star_rating = get_star_rating(peg_for_rating, [0.5, 1.0, 1.5, 2.0], reverse=True)
     
+    # Extract all available info fields for comprehensive data
     return {
+        # Basic identification
         'symbol': symbol,
         'name': info.get('shortName', ''),
         'company_name': info.get('shortName', ''),
+        'long_name': info.get('longName', ''),
+        
+        # Price and market data
         'price': info.get('regularMarketPrice'),
+        'previous_close': info.get('previousClose'),
+        'open': info.get('open'),
+        'day_low': info.get('dayLow'),
+        'day_high': info.get('dayHigh'),
+        'fifty_two_week_low': info.get('fiftyTwoWeekLow'),
+        'fifty_two_week_high': info.get('fiftyTwoWeekHigh'),
         'market_cap': info.get('marketCap'),
+        'enterprise_value': info.get('enterpriseValue'),
+        
+        # Volume data
+        'volume': info.get('regularMarketVolume'),
+        'average_volume': info.get('averageVolume'),
+        'average_volume_10day': info.get('averageVolume10days'),
+        
+        # Valuation ratios
         'pe_ratio': info.get('trailingPE'),
         'forward_pe': info.get('forwardPE'),
         'peg_ratio': gaap_peg,
         'forward_peg': forward_peg,
-        'gp_a': metrics['gp_a'],  # GP/A from compute_metrics
+        'pb_ratio': info.get('priceToBook'),
+        'ps_ratio': info.get('priceToSalesTrailing12Months'),
+        'pcf_ratio': info.get('priceToFreeCashflow'),
+        
+        # Profitability metrics (from compute_metrics)
+        'gp_a': metrics['gp_a'],  # Gross Profit / Total Assets
         'gross_margin': metrics['gross_margin'],
         'profit_margin': info.get('profitMargins'),
         'roe': info.get('returnOnEquity'),
-        'pb_ratio': info.get('priceToBook'),
+        'roa': info.get('returnOnAssets'),
+        
+        # Growth metrics
         'asset_growth': metrics['asset_growth'],
+        'revenue_growth_ttm': info.get('revenueGrowth'),
+        'earnings_growth_quarterly': info.get('earningsQuarterlyGrowth'),
+        
+        # Performance data
         'perf_6m': perf_6m,
         'perf_12m': perf_12m,
+        
+        # Dividend data
+        'dividend_rate': info.get('dividendRate'),
+        'dividend_yield': info.get('dividendYield'),
+        'payout_ratio': info.get('payoutRatio'),
+        'ex_dividend_date': info.get('exDividendDate'),
+        
+        # Balance sheet data
+        'total_assets': info.get('totalAssets'),
+        'total_debt': info.get('totalDebt'),
+        'debt_to_equity': info.get('debtToEquity'),
+        'current_ratio': info.get('currentRatio'),
+        
+        # Cash flow data
+        'operating_cash_flow': info.get('operatingCashflow'),
+        'free_cash_flow': info.get('freeCashflow'),
+        
+        # Scores and ratings
         'nm_score': nm_score,
         'mf_score': mf_score,
         'star_rating': star_rating,
+        
+        # PEG source tracking
+        'growth_used': growth_used,
+        'peg_source': peg_source,
+        
+        # Additional useful fields
+        'beta': info.get('beta'),
+        'shares_outstanding': info.get('sharesOutstanding'),
+        'float_shares': info.get('floatShares'),
+        'held_percent_insiders': info.get('heldPercentInsiders'),
+        'held_percent_institutions': info.get('heldPercentInstitutions'),
+        
+        # Sector and industry
+        'sector': info.get('sector', ''),
+        'industry': info.get('industry', ''),
+        'full_time_employees': info.get('fullTimeEmployees'),
     }
 
 
