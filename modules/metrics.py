@@ -3,6 +3,12 @@ Financial metric calculations.
 
 Computes PEG ratios, growth rates, and other key financial indicators.
 Based on original.py reference implementation.
+
+Key Decisions:
+- Two PEGs: GAAP (backward-looking) vs Forward (forward-looking)
+- Analyst overoptimism handled by capping at 60% and dampening formula
+- PEG < 0 = no profit situation, PEG > 50 = calculation issue
+- GP/A is core Novy-Marx factor for predicting future returns
 """
 
 import pandas as pd
@@ -12,6 +18,9 @@ from typing import Any
 def calculate_gaap_peg(info: dict, financials: pd.DataFrame | None) -> float | None:
     """Calculate GAAP PEG ratio using historical Net Income CAGR.
     
+    This is the BACKWARD-LOOKING PEG - uses actual historical performance
+    to see how the company has grown in reality (not analyst estimates).
+    
     Args:
         info: Stock info dictionary from yfinance
         financials: Financial statements DataFrame with 'Net Income' row
@@ -20,6 +29,7 @@ def calculate_gaap_peg(info: dict, financials: pd.DataFrame | None) -> float | N
         GAAP PEG ratio or None if not calculable
     """
     try:
+        # Use trailing PE (historical) for backward-looking perspective
         trailing_pe = info.get('trailingPE')
         if trailing_pe is None or trailing_pe <= 0:
             return None
@@ -36,6 +46,7 @@ def calculate_gaap_peg(info: dict, financials: pd.DataFrame | None) -> float | N
         years = len(net_income) - 1
         if oldest <= 0 or latest <= 0:
             return None
+        # CAGR smooths multi-year volatility for realistic growth rate
         cagr = (latest / oldest) ** (1 / years) - 1
         growth_pct = cagr * 100
         if growth_pct <= 0:
@@ -48,6 +59,13 @@ def calculate_gaap_peg(info: dict, financials: pd.DataFrame | None) -> float | N
 def calculate_forward_peg(info: dict, growth_estimates: dict | None) -> tuple[float | None, float | None, str]:
     """Calculate Forward PEG ratio with capping and dampening.
     
+    This is the FORWARD-LOOKING PEG - uses analyst estimates to see
+    expected future performance. Handles overoptimistic analysts by:
+    1. Capping growth at 60% (analysts tend to be overly optimistic)
+    2. Dampening formula for info-based sources: only count first 30%
+       fully, then add just 20% of excess (max 50%) - penalizes less
+       reliable data sources that aren't analyst estimates.
+    
     Args:
         info: Stock info dictionary from yfinance
         growth_estimates: Dictionary with 'growth_2y', 'growth_1y', 'source' keys
@@ -55,6 +73,7 @@ def calculate_forward_peg(info: dict, growth_estimates: dict | None) -> tuple[fl
     Returns:
         Tuple of (peg_value, growth_used_as_decimal, source_string)
     """
+    # Use forward PE for forward-looking perspective
     forward_pe = info.get('forwardPE')
     if forward_pe is None or forward_pe <= 0:
         return None, None, "N/A"
@@ -65,7 +84,7 @@ def calculate_forward_peg(info: dict, growth_estimates: dict | None) -> tuple[fl
     # Try 2-year blend first (from GE-2Y or EE-2Y)
     g2 = growth_estimates.get('growth_2y')
     if g2 is not None and g2 > 0:
-        capped = min(g2, 0.60)  # Cap at 60%
+        capped = min(g2, 0.60)  # Cap at 60% - analysts tend to be overly optimistic
         growth_pct = capped * 100
         peg = forward_pe / growth_pct
         return peg, capped, growth_estimates.get('source', 'GE-2Y')
@@ -74,17 +93,17 @@ def calculate_forward_peg(info: dict, growth_estimates: dict | None) -> tuple[fl
     g1_ge = growth_estimates.get('growth_1y')
     src = growth_estimates.get('source', 'N/A')
     if g1_ge is not None and g1_ge > 0 and (src.startswith('GE') or src.startswith('EE')):
-        capped = min(g1_ge, 0.60)  # Cap at 60%
+        capped = min(g1_ge, 0.60)  # Cap at 60% - analysts tend to be overly optimistic
         growth_pct = capped * 100
         peg = forward_pe / growth_pct
         return peg, capped, src
 
     # Fallback: info-based growth with dampening (30% base + 20% of excess, max 50%)
     if g1_ge is not None and g1_ge > 0:
-        base = min(g1_ge, 0.30)
-        excess = max(0, g1_ge - 0.30) * 0.2
+        base = min(g1_ge, 0.30)  # Count first 30% fully
+        excess = max(0, g1_ge - 0.30) * 0.2  # Only add 20% of anything above 30%
         dampened = base + excess
-        dampened = min(dampened, 0.50)  # Cap at 50%
+        dampened = min(dampened, 0.50)  # Cap at 50% - penalizes less reliable info sources
         growth_pct = dampened * 100
         peg = forward_pe / growth_pct
         return peg, dampened, f"1Y→{src}"
