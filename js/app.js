@@ -95,19 +95,34 @@ function renderTable(tableId, data) {
         sortedData.sort((a, b) => compareValues(a[sortColumn], b[sortColumn]));
     }
     
-    tbody.innerHTML = sortedData.map(stock => `
+    tbody.innerHTML = sortedData.map(stock => {
+        // Get Forward PEG color class
+        const forwardPegClass = getColorClass(stock.forward_peg, 'peg');
+        
+        // Compare Forward PEG with Trailing PEG for arrow indicator
+        let pegArrow = '';
+        if (stock.forward_peg !== null && stock.peg_ratio !== null) {
+            if (stock.forward_peg < stock.peg_ratio) {
+                pegArrow = '<span class="arrow-up"></span>';
+            } else {
+                pegArrow = '<span class="arrow-down"></span>';
+            }
+        }
+        
+        return `
         <tr onclick="showStockDetails('${stock.symbol}')" style="cursor: pointer;">
             <td><strong>${stock.symbol || 'N/A'}</strong></td>
             <td>${stock.company_name || stock.name || 'N/A'}</td>
             <td class="stars">${getStarsHTML(stock.star_rating)}</td>
             <td>$${formatNumber(stock.price)}</td>
-            <td>${formatNumber(stock.forward_peg, 2)}</td>
+            <td class="${forwardPegClass}">${formatNumber(stock.forward_peg, 2)} ${pegArrow}</td>
             <td>${formatNumber(stock.gp_a * 100, 1)}%</td>
             <td>${formatNumber(stock.roe * 100, 1)}%</td>
             <td>${formatNumber(stock.profit_margin * 100, 1)}%</td>
-        </tr>
-    `).join('');
+        </tr>`;
+    }).join('');
 }
+
 
 // Create center text plugin for Chart.js doughnut charts
 function createCenterTextPlugin(text, fontSize) {
@@ -434,13 +449,12 @@ function showStockDetails(symbol) {
             <!-- Header Info Section -->
             <div class="header-info">
                 <div class="symbol-row">
-                    <div>
+                    <div class="left-content">
                         <span class="symbol-name">${stock.symbol}</span>
                         <span class="company-name"> - ${stock.company_name || stock.name}</span><span class="stars"> ${getStarsHTML(stock.star_rating)}</span>
                     </div>
                     <div class="price-display">
                         <div class="current-price">Last Close: $${formatNumber(stock.price)}</div>
-                        <div class="market-cap-badge ${marketCapClass}">Marktkapitalisierung: ${formatLargeNumber(stock.market_cap)}</div>
                     </div>
                 </div>
 
@@ -448,6 +462,7 @@ function showStockDetails(symbol) {
                     <span class="info-item"><span class="info-label">Sector:</span> ${stock.sector || 'N/A'}</span>
                     <span class="info-item"><span class="info-label">Industry:</span> ${stock.industry || 'N/A'}</span>
                     <span class="info-item"><span class="info-label">Employees:</span> ${formatNumber(stock.full_time_employees)}</span>
+                    <span class="info-item"><span class="info-label">Marktkapitalisierung:</span> ${formatLargeNumber(stock.market_cap)}</span>
                     <span class="info-item"><span class="info-label">Stand:</span> ${new Date().toLocaleDateString('de-DE')}</span>
                 </div>
             </div>

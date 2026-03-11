@@ -22,9 +22,17 @@ body {
 .hold-section { background-color: #fff3cd; }
 .sell-section { background-color: #f8d7da; }
 
-.stars {
-    color: #ffc107;
-    font-size: 1.2rem;
+/* Table stars - smaller size, black color */
+table .stars,
+td .stars {
+    color: #333 !important;
+    font-size: 1.2rem !important;
+}
+
+/* Modal stars - larger size for alignment with symbol/company name */
+.modal-body .stars {
+    color: #ffc107 !important;
+    font-size: 2.5rem !important;
 }
 
 .price-up {
@@ -185,19 +193,29 @@ table th:hover {
 .symbol-row {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: baseline;
     margin-bottom: 1rem;
 }
 
+.left-content {
+    display: flex;
+    align-items: baseline;
+}
+
 .symbol-name {
-    font-size: 2rem;
+    font-size: 2.5rem;
     font-weight: bold;
     color: #333;
 }
 
 .company-name {
-    font-size: 1.5rem;
+    font-size: 2.5rem;
     color: #666;
+}
+
+.stars {
+    font-size: 2.5rem;
+    color: #ffc107;
 }
 
 .price-display {
