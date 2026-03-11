@@ -456,7 +456,7 @@ function showStockDetails(symbol) {
             <div class="quick-stats-row">
                 <div class="stat-item">
                     <div class="stat-label">Forward P/E</div>
-                    <div class="stat-value">${formatNumber(stock.forward_pe, 2)}</div>
+                    <div class="stat-value">${stock.forward_pe != null && stock.pe_ratio != null ? (stock.forward_pe < stock.pe_ratio ? '<span class="arrow-up"></span>' : '<span class="arrow-down"></span>') : ''}${formatNumber(stock.forward_pe, 2)}</div>
                 </div>
                 <div class="stat-item">
                     <div class="stat-label">Trailing P/E</div>
@@ -745,7 +745,8 @@ function getColorClass(value, type) {
             if (v <= 15) return 'c-yellow';
             return 'c-red';
         
-        case 'peg': // PEG: ≤1.0 green, 1.0-1.5 yellow, >1.5 red
+        case 'peg': // PEG: <0.4 yellow, 0.4-1.0 green, >1.0 yellow, >1.5 red
+            if (v <= 0.4) return 'peg-yellow';
             if (v <= 1.0) return 'peg-green';
             if (v <= 1.5) return 'peg-yellow';
             return 'peg-red';

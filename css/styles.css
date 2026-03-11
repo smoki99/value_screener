@@ -58,16 +58,17 @@ table th:hover {
 }
 
 /* Color classes based on Novy-Marx paper */
-.c-green { color: #3fb950; }
-.c-yellow { color: #d29922; }
-.c-red { color: #f85149; }
+.c-green { color: #3fb950 !important; }
+.c-yellow { color: #d29922 !important; }
+.c-red { color: #f85149 !important; }
 
-.peg-green { color: #3fb950; font-weight: 600; }
-.peg-yellow { color: #d29922; font-weight: 600; }
-.peg-red { color: #f85149; font-weight: 600; }
+.peg-green { color: #3fb950 !important; font-weight: 600 !important; }
+.peg-yellow { color: #d29922 !important; font-weight: 600 !important; }
+.peg-red { color: #f85149 !important; font-weight: 600 !important; }
 
-.perf-pos { color: #3fb950; }
-.perf-neg { color: #f85149; }
+.perf-pos { color: #3fb950 !important; }
+.perf-neg { color: #f85149 !important; }
+
 
 /* Arrow indicators for Forward PEG comparison */
 .arrow-up {
@@ -261,7 +262,6 @@ table th:hover {
 .stat-value {
     font-size: 1.2rem;
     font-weight: bold;
-    color: #333;
 }
 
 /* Gauge Charts Section */
