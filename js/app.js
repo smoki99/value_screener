@@ -11,6 +11,9 @@ let lastUpdate = '';
 let sortColumn = null;
 let sortDirection = 'asc';
 
+// Chart instances for cleanup
+let gaugeCharts = {};
+
 // Fetch all data on page load
 document.addEventListener('DOMContentLoaded', function() {
     fetchData();
@@ -105,64 +108,53 @@ function renderTable(tableId, data) {
     `).join('');
 }
 
-// Color helper functions based on Novy-Marx paper thresholds
-function getColorClass(value, type) {
-    if (value === null || value === undefined || isNaN(value)) return '';
+// Create gauge chart using Chart.js
+function createGaugeChart(canvasId, value, label) {
+    const ctx = document.getElementById(canvasId);
+    if (!ctx) return null;
     
+    // Destroy existing chart if any
+    if (gaugeCharts[canvasId]) {
+        gaugeCharts[canvasId].destroy();
+    }
+    
+    // Determine color based on value thresholds
+    let arcColor, centerColor;
     const v = Number(value);
     
-    switch(type) {
-        case 'gp_a': // GP/A: ≥30% green, 15-30% yellow, <15% red
-            if (v >= 30) return 'c-green';
-            if (v >= 15) return 'c-yellow';
-            return 'c-red';
-        
-        case 'gross_margin': // GM: ≥50% green, 30-50% yellow, <30% red
-            if (v >= 50) return 'c-green';
-            if (v >= 30) return 'c-yellow';
-            return 'c-red';
-        
-        case 'roe': // ROE: ≥20% green, 10-20% yellow, <10% red
-            if (v >= 20) return 'c-green';
-            if (v >= 10) return 'c-yellow';
-            return 'c-red';
-        
-        case 'pb_ratio': // P/B: ≤5 green, 5-15 yellow, >15 red (inverted)
-            if (v <= 5) return 'c-green';
-            if (v <= 15) return 'c-yellow';
-            return 'c-red';
-        
-        case 'peg': // PEG: ≤1.0 green, 1.0-1.5 yellow, >1.5 red
-            if (v <= 1.0) return 'peg-green';
-            if (v <= 1.5) return 'peg-yellow';
-            return 'peg-red';
-        
-        case 'performance': // Performance: ≥0% green, <0% red
-            if (v >= 0) return 'perf-pos';
-            return 'perf-neg';
-        
-        default:
-            return '';
-    }
+    if (v >= 30) { arcColor = '#3fb950'; centerColor = '#3fb950'; } // Green
+    else if (v >= 15) { arcColor = '#d29922'; centerColor = '#d29922'; } // Yellow
+    else { arcColor = '#f85149'; centerColor = '#f85149'; } // Red
+    
+    const chart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Value', 'Remaining'],
+            datasets: [{
+                data: [v, 100 - v],
+                backgroundColor: [
+                    arcColor,
+                    '#e9ecef'
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '75%',
+            plugins: {
+                legend: { display: false },
+                tooltip: { enabled: false }
+            }
+        }
+    });
+    
+    gaugeCharts[canvasId] = chart;
+    return chart;
 }
 
-function getBadgeClass(value, type) {
-    const colorClass = getColorClass(value, type);
-    if (colorClass === 'c-green' || colorClass === 'peg-green') return 'badge-green';
-    if (colorClass === 'c-yellow' || colorClass === 'peg-yellow') return 'badge-yellow';
-    if (colorClass === 'c-red' || colorClass === 'peg-red') return 'badge-red';
-    return '';
-}
-
-function getHighlightClass(value, type) {
-    const colorClass = getColorClass(value, type);
-    if (colorClass === 'c-green' || colorClass === 'peg-green') return 'highlight-green';
-    if (colorClass === 'c-yellow' || colorClass === 'peg-yellow') return 'highlight-yellow';
-    if (colorClass === 'c-red' || colorClass === 'peg-red') return 'highlight-red';
-    return '';
-}
-
-// Show stock details modal with professional color scheme
+// Show stock details modal with professional layout and gauge charts
 function showStockDetails(symbol) {
     // Find the stock in all data arrays
     let stock = null;
@@ -175,158 +167,127 @@ function showStockDetails(symbol) {
         return;
     }
     
-    // Build modal content with color-coded metrics
+    // Determine market cap color
+    const marketCap = Number(stock.market_cap || 0);
+    let marketCapClass = 'market-cap-red';
+    if (marketCap > 10e9) { marketCapClass = 'market-cap-green'; } // > $10B green
+    else if (marketCap > 2e9) { marketCapClass = 'market-cap-yellow'; } // > $2B yellow
+    
+    // Build modal content with new professional layout
     const modalContent = `
         <div class="modal-header">
             <h2>${stock.symbol} - ${stock.company_name || stock.name}</h2>
             <button onclick="closeModal()" class="close-btn">&times;</button>
         </div>
         <div class="modal-body">
-            <div class="section">
-                <h3>Basic Information</h3>
-                <p><strong>Sector:</strong> ${stock.sector || 'N/A'}</p>
-                <p><strong>Industry:</strong> ${stock.industry || 'N/A'}</p>
-                <p><strong>Employees:</strong> ${formatNumber(stock.full_time_employees)}</p>
-            </div>
-            
-            <div class="section">
-                <h3>Price & Market Data</h3>
-                <div class="metric-row">
-                    <span class="metric-label">Current Price</span>
-                    <span class="metric-value">$${formatNumber(stock.price)}</span>
+            <!-- Header Info Section -->
+            <div class="header-info">
+                <div class="symbol-row">
+                    <div>
+                        <span class="symbol-name">${stock.symbol}</span>
+                        <span class="company-name"> - ${stock.company_name || stock.name}</span>
+                    </div>
+                    <div class="price-display">
+                        <div class="current-price">$${formatNumber(stock.price)}</div>
+                        <div class="market-cap-badge ${marketCapClass}">${formatLargeNumber(stock.market_cap)}</div>
+                    </div>
                 </div>
-                <div class="metric-row">
-                    <span class="metric-label">Previous Close</span>
-                    <span class="metric-value">$${formatNumber(stock.previous_close)}</span>
-                </div>
-                <div class="metric-row">
-                    <span class="metric-label">Day Range</span>
-                    <span class="metric-value">$${formatNumber(stock.day_low)} - $${formatNumber(stock.day_high)}</span>
-                </div>
-                <div class="metric-row">
-                    <span class="metric-label">52-Week Range</span>
-                    <span class="metric-value">$${formatNumber(stock.fifty_two_week_low)} - $${formatNumber(stock.fifty_two_week_high)}</span>
-                </div>
-                <div class="metric-row">
-                    <span class="metric-label">Market Cap</span>
-                    <span class="metric-value">${formatLargeNumber(stock.market_cap)}</span>
+                <div class="basic-info-row">
+                    <span class="info-item"><span class="info-label">Sector:</span> ${stock.sector || 'N/A'}</span>
+                    <span class="info-item"><span class="info-label">Industry:</span> ${stock.industry || 'N/A'}</span>
+                    <span class="info-item"><span class="info-label">Employees:</span> ${formatNumber(stock.full_time_employees)}</span>
                 </div>
             </div>
             
+            <!-- Quick Stats Row -->
+            <div class="quick-stats-row">
+                <div class="stat-item">
+                    <div class="stat-label">Star Rating</div>
+                    <div class="stat-value stars">${getStarsHTML(stock.star_rating)}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">PEG Ratio</div>
+                    <div class="stat-value ${getColorClass(stock.peg_ratio, 'peg')}">${formatNumber(stock.peg_ratio, 2)}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Forward PEG</div>
+                    <div class="stat-value ${getColorClass(stock.forward_peg, 'peg')}">${formatNumber(stock.forward_peg, 2)}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Novy Marx Score</div>
+                    <div class="stat-value">${formatNumber(stock.nm_score, 2)}</div>
+                </div>
+            </div>
+            
+            <!-- Gauge Charts Section -->
+            <div class="gauge-charts-section">
+                <div class="gauge-container">
+                    <canvas id="gaugeGPA"></canvas>
+                    <div class="gauge-value">${formatNumber(stock.gp_a * 100, 1)}%</div>
+                    <div class="gauge-label">GP/A</div>
+                </div>
+                <div class="gauge-container">
+                    <canvas id="gaugeGM"></canvas>
+                    <div class="gauge-value">${formatNumber(stock.gross_margin * 100, 1)}%</div>
+                    <div class="gauge-label">Gross Margin</div>
+                </div>
+                <div class="gauge-container">
+                    <canvas id="gaugeROE"></canvas>
+                    <div class="gauge-value">${formatNumber(stock.roe * 100, 1)}%</div>
+                    <div class="gauge-label">ROE</div>
+                </div>
+            </div>
+            
+            <!-- Valuation Section -->
             <div class="section">
                 <h3>Valuation Ratios</h3>
-                <div class="metric-row">
-                    <span class="metric-label">P/E Ratio (Trailing)</span>
-                    <span class="metric-value">${formatNumber(stock.pe_ratio, 2)}</span>
-                </div>
-                <div class="metric-row">
-                    <span class="metric-label">Forward P/E</span>
-                    <span class="metric-value">${formatNumber(stock.forward_pe, 2)}</span>
-                </div>
-                <div class="metric-row">
-                    <span class="metric-label">PEG Ratio</span>
-                    <span class="metric-value ${getColorClass(stock.peg_ratio, 'peg')}">${formatNumber(stock.peg_ratio, 2)}</span>
-                </div>
-                <div class="metric-row">
-                    <span class="metric-label">Forward PEG</span>
-                    <span class="metric-value ${getColorClass(stock.forward_peg, 'peg')}">${formatNumber(stock.forward_peg, 2)}</span>
-                </div>
-                <div class="metric-row">
-                    <span class="metric-label">P/B Ratio</span>
-                    <span class="metric-value ${getColorClass(stock.pb_ratio, 'pb_ratio')}">${formatNumber(stock.pb_ratio, 2)}</span>
-                </div>
-                <div class="metric-row">
-                    <span class="metric-label">P/S Ratio</span>
-                    <span class="metric-value">${formatNumber(stock.ps_ratio, 2)}</span>
+                <div class="valuation-grid">
+                    <div class="metric-row"><span class="metric-label">P/E Ratio (Trailing)</span><span class="metric-value">${formatNumber(stock.pe_ratio, 2)}</span></div>
+                    <div class="metric-row"><span class="metric-label">Forward P/E</span><span class="metric-value">${formatNumber(stock.forward_pe, 2)}</span></div>
+                    <div class="metric-row"><span class="metric-label">P/B Ratio</span><span class="metric-value ${getColorClass(stock.pb_ratio, 'pb_ratio')}">${formatNumber(stock.pb_ratio, 2)}</span></div>
+                    <div class="metric-row"><span class="metric-label">P/S Ratio</span><span class="metric-value">${formatNumber(stock.ps_ratio, 2)}</span></div>
                 </div>
             </div>
             
+            <!-- Growth & Performance Section -->
             <div class="section">
-                <h3>Profitability Metrics (Novy-Marx)</h3>
-                <div class="metric-row">
-                    <span class="metric-label">GP/A (Gross Profit/Assets)</span>
-                    <span class="metric-value ${getColorClass(stock.gp_a * 100, 'gp_a')}">${formatNumber(stock.gp_a * 100, 1)}%</span>
-                </div>
-                <div class="metric-row">
-                    <span class="metric-label">Gross Margin</span>
-                    <span class="metric-value ${getColorClass(stock.gross_margin * 100, 'gross_margin')}">${formatNumber(stock.gross_margin * 100, 1)}%</span>
-                </div>
-                <div class="metric-row">
-                    <span class="metric-label">Profit Margin</span>
-                    <span class="metric-value ${getColorClass(stock.profit_margin * 100, 'gross_margin')}">${formatNumber(stock.profit_margin * 100, 1)}%</span>
-                </div>
-                <div class="metric-row">
-                    <span class="metric-label">ROE (Return on Equity)</span>
-                    <span class="metric-value ${getColorClass(stock.roe * 100, 'roe')}">${formatNumber(stock.roe * 100, 1)}%</span>
-                </div>
-                <div class="metric-row">
-                    <span class="metric-label">ROA (Return on Assets)</span>
-                    <span class="metric-value ${getColorClass(stock.roa * 100, 'roe')}">${formatNumber(stock.roa * 100, 1)}%</span>
+                <h3>Growth & Performance</h3>
+                <div class="valuation-grid">
+                    <div class="metric-row"><span class="metric-label">Asset Growth</span><span class="metric-value ${getColorClass(stock.asset_growth * 100, 'roe')}">${formatNumber(stock.asset_growth * 100, 1)}%</span></div>
+                    <div class="metric-row"><span class="metric-label">Revenue Growth (TTM)</span><span class="metric-value ${getColorClass(stock.revenue_growth_ttm * 100, 'roe')}">${formatNumber(stock.revenue_growth_ttm * 100, 1)}%</span></div>
+                    <div class="metric-row"><span class="metric-label">Earnings Growth (Q)</span><span class="metric-value ${getColorClass(stock.earnings_growth_quarterly * 100, 'roe')}">${formatNumber(stock.earnings_growth_quarterly * 100, 1)}%</span></div>
+                    <div class="metric-row"><span class="metric-label">6M Performance</span><span class="metric-value ${getColorClass(stock.perf_6m * 100, 'performance')}">${formatNumber(stock.perf_6m * 100, 1)}%</span></div>
+                    <div class="metric-row"><span class="metric-label">12M Performance</span><span class="metric-value ${getColorClass(stock.perf_12m * 100, 'performance')}">${formatNumber(stock.perf_12m * 100, 1)}%</span></div>
                 </div>
             </div>
             
+            <!-- Balance Sheet Summary -->
             <div class="section">
-                <h3>Growth Metrics</h3>
-                <div class="metric-row">
-                    <span class="metric-label">Asset Growth</span>
-                    <span class="metric-value ${getColorClass(stock.asset_growth * 100, 'roe')}">${formatNumber(stock.asset_growth * 100, 1)}%</span>
-                </div>
-                <div class="metric-row">
-                    <span class="metric-label">Revenue Growth (TTM)</span>
-                    <span class="metric-value ${getColorClass(stock.revenue_growth_ttm * 100, 'roe')}">${formatNumber(stock.revenue_growth_ttm * 100, 1)}%</span>
-                </div>
-                <div class="metric-row">
-                    <span class="metric-label">Earnings Growth (Quarterly)</span>
-                    <span class="metric-value ${getColorClass(stock.earnings_growth_quarterly * 100, 'roe')}">${formatNumber(stock.earnings_growth_quarterly * 100, 1)}%</span>
+                <h3>Balance Sheet</h3>
+                <div class="valuation-grid">
+                    <div class="metric-row"><span class="metric-label">Total Assets</span><span class="metric-value">${formatLargeNumber(stock.total_assets)}</span></div>
+                    <div class="metric-row"><span class="metric-label">Total Debt</span><span class="metric-value">${formatLargeNumber(stock.total_debt)}</span></div>
+                    <div class="metric-row"><span class="metric-label">Debt to Equity</span><span class="metric-value">${formatNumber(stock.debt_to_equity, 2)}</span></div>
+                    <div class="metric-row"><span class="metric-label">Current Ratio</span><span class="metric-value">${formatNumber(stock.current_ratio, 2)}</span></div>
                 </div>
             </div>
             
-            <div class="section">
-                <h3>Performance Data</h3>
-                <div class="metric-row">
-                    <span class="metric-label">6-Month Performance</span>
-                    <span class="metric-value ${getColorClass(stock.perf_6m * 100, 'performance')}">${formatNumber(stock.perf_6m * 100, 1)}%</span>
-                </div>
-                <div class="metric-row">
-                    <span class="metric-label">12-Month Performance</span>
-                    <span class="metric-value ${getColorClass(stock.perf_12m * 100, 'performance')}">${formatNumber(stock.perf_12m * 100, 1)}%</span>
-                </div>
-            </div>
-            
+            <!-- Dividend Data -->
             <div class="section">
                 <h3>Dividend Data</h3>
-                <p><strong>Dividend Rate:</strong> $${formatNumber(stock.dividend_rate)}</p>
-                <p><strong>Dividend Yield:</strong> ${formatNumber(stock.dividend_yield * 100, 2)}%</p>
-                <p><strong>Payout Ratio:</strong> ${formatNumber(stock.payout_ratio * 100, 1)}%</p>
-            </div>
-            
-            <div class="section">
-                <h3>Balance Sheet Data</h3>
-                <p><strong>Total Assets:</strong> ${formatLargeNumber(stock.total_assets)}</p>
-                <p><strong>Total Debt:</strong> ${formatLargeNumber(stock.total_debt)}</p>
-                <p><strong>Debt to Equity:</strong> ${formatNumber(stock.debt_to_equity, 2)}</p>
-                <p><strong>Current Ratio:</strong> ${formatNumber(stock.current_ratio, 2)}</p>
-            </div>
-            
-            <div class="section">
-                <h3>Cash Flow Data</h3>
-                <p><strong>Operating Cash Flow:</strong> ${formatLargeNumber(stock.operating_cash_flow)}</p>
-                <p><strong>Free Cash Flow:</strong> ${formatLargeNumber(stock.free_cash_flow)}</p>
-            </div>
-            
-            <div class="section">
-                <h3>Scores & Ratings</h3>
-                <div class="metric-row">
-                    <span class="metric-label">Star Rating</span>
-                    <span class="metric-value stars">${getStarsHTML(stock.star_rating)}</span>
+                <div class="valuation-grid">
+                    <div class="metric-row"><span class="metric-label">Dividend Rate</span><span class="metric-value">$${formatNumber(stock.dividend_rate)}</span></div>
+                    <div class="metric-row"><span class="metric-label">Dividend Yield</span><span class="metric-value">${formatNumber(stock.dividend_yield * 100, 2)}%</span></div>
+                    <div class="metric-row"><span class="metric-label">Payout Ratio</span><span class="metric-value">${formatNumber(stock.payout_ratio * 100, 1)}%</span></div>
                 </div>
-                <div class="metric-row">
-                    <span class="metric-label">Novy Marx Score</span>
-                    <span class="metric-value">${formatNumber(stock.nm_score, 2)}</span>
-                </div>
-                <div class="metric-row">
-                    <span class="metric-label">Multi-Factor Score</span>
-                    <span class="metric-value">${formatNumber(stock.mf_score, 2)}</span>
+            </div>
+            
+            <!-- Cash Flow -->
+            <div class="section">
+                <h3>Cash Flow</h3>
+                <div class="valuation-grid">
+                    <div class="metric-row"><span class="metric-label">Operating Cash Flow</span><span class="metric-value">${formatLargeNumber(stock.operating_cash_flow)}</span></div>
+                    <div class="metric-row"><span class="metric-label">Free Cash Flow</span><span class="metric-value">${formatLargeNumber(stock.free_cash_flow)}</span></div>
                 </div>
             </div>
         </div>
@@ -334,11 +295,26 @@ function showStockDetails(symbol) {
     
     document.getElementById('modalContent').innerHTML = modalContent;
     document.getElementById('stockModal').style.display = 'flex';
+    
+    // Create gauge charts after modal is shown
+    setTimeout(() => {
+        createGaugeChart('gaugeGPA', stock.gp_a * 100, 'GP/A');
+        createGaugeChart('gaugeGM', stock.gross_margin * 100, 'Gross Margin');
+        createGaugeChart('gaugeROE', stock.roe * 100, 'ROE');
+    }, 100);
 }
 
-// Close modal
+// Close modal and cleanup charts
 function closeModal() {
     document.getElementById('stockModal').style.display = 'none';
+    
+    // Cleanup all gauge chart instances
+    for (const key in gaugeCharts) {
+        if (gaugeCharts[key]) {
+            gaugeCharts[key].destroy();
+        }
+    }
+    gaugeCharts = {};
 }
 
 // Get stars HTML
@@ -414,4 +390,45 @@ function showLoading(show) {
 // Show error message
 function showError(message) {
     alert(message);
+}
+
+// Color helper functions based on Novy-Marx paper thresholds
+function getColorClass(value, type) {
+    if (value === null || value === undefined || isNaN(value)) return '';
+    
+    const v = Number(value);
+    
+    switch(type) {
+        case 'gp_a': // GP/A: ≥30% green, 15-30% yellow, <15% red
+            if (v >= 30) return 'c-green';
+            if (v >= 15) return 'c-yellow';
+            return 'c-red';
+        
+        case 'gross_margin': // GM: ≥50% green, 30-50% yellow, <30% red
+            if (v >= 50) return 'c-green';
+            if (v >= 30) return 'c-yellow';
+            return 'c-red';
+        
+        case 'roe': // ROE: ≥20% green, 10-20% yellow, <10% red
+            if (v >= 20) return 'c-green';
+            if (v >= 10) return 'c-yellow';
+            return 'c-red';
+        
+        case 'pb_ratio': // P/B: ≤5 green, 5-15 yellow, >15 red (inverted)
+            if (v <= 5) return 'c-green';
+            if (v <= 15) return 'c-yellow';
+            return 'c-red';
+        
+        case 'peg': // PEG: ≤1.0 green, 1.0-1.5 yellow, >1.5 red
+            if (v <= 1.0) return 'peg-green';
+            if (v <= 1.5) return 'peg-yellow';
+            return 'peg-red';
+        
+        case 'performance': // Performance: ≥0% green, <0% red
+            if (v >= 0) return 'perf-pos';
+            return 'perf-neg';
+        
+        default:
+            return '';
+    }
 }

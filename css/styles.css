@@ -88,8 +88,8 @@ table th:hover {
     background-color: white;
     border-radius: 12px;
     width: 90%;
-    max-width: 800px;
-    margin: 50px 0;
+    max-width: 850px;
+    margin: 30px 0;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
 }
 
@@ -131,6 +131,7 @@ table th:hover {
     padding: 2rem;
 }
 
+/* Professional Modal Sections */
 .section {
     margin-bottom: 1.5rem;
     padding-bottom: 1.5rem;
@@ -151,9 +152,147 @@ table th:hover {
     padding-left: 10px;
 }
 
-.section p {
-    margin: 0.5rem 0;
+/* Header Section - Basic Info */
+.header-info {
+    background-color: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.symbol-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.symbol-name {
+    font-size: 2rem;
+    font-weight: bold;
     color: #333;
+}
+
+.company-name {
+    font-size: 1.5rem;
+    color: #666;
+}
+
+.price-display {
+    text-align: right;
+}
+
+.current-price {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #333;
+}
+
+.market-cap-badge {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-weight: 600;
+    margin-top: 8px;
+}
+
+.market-cap-green { background-color: #3fb950; color: white; }
+.market-cap-yellow { background-color: #d29922; color: white; }
+.market-cap-red { background-color: #f85149; color: white; }
+
+.basic-info-row {
+    display: flex;
+    gap: 2rem;
+    margin-top: 1rem;
+    font-size: 0.95rem;
+}
+
+.info-item {
+    color: #666;
+}
+
+.info-label {
+    font-weight: 600;
+    color: #444;
+}
+
+/* Quick Stats Row */
+.quick-stats-row {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+}
+
+.stat-item {
+    flex: 1;
+    text-align: center;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+.stat-value {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #333;
+}
+
+/* Gauge Charts Section */
+.gauge-charts-section {
+    display: flex;
+    justify-content: space-around;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.gauge-container {
+    position: relative;
+    width: 200px;
+    height: 200px;
+}
+
+.gauge-label {
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-weight: bold;
+    color: #333;
+    white-space: nowrap;
+}
+
+.gauge-value {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #333;
+}
+
+/* Metric Row Styling */
+.metric-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+}
+
+.metric-label {
+    font-weight: 500;
+    color: #444;
+}
+
+.metric-value {
+    font-family: 'Courier New', monospace;
+    font-size: 1.1rem;
 }
 
 /* Badge styles for colored indicators */
@@ -181,20 +320,25 @@ table th:hover {
 .highlight-yellow { background-color: rgba(210, 153, 34, 0.1); }
 .highlight-red { background-color: rgba(248, 81, 73, 0.1); }
 
-/* Metric row styling */
-.metric-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 6px 0;
+/* Valuation Grid */
+.valuation-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
 }
 
-.metric-label {
-    font-weight: 500;
-    color: #444;
-}
-
-.metric-value {
-    font-family: 'Courier New', monospace;
-    font-size: 1.1rem;
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .gauge-charts-section {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .quick-stats-row {
+        flex-wrap: wrap;
+    }
+    
+    .stat-item {
+        min-width: 120px;
+    }
 }
