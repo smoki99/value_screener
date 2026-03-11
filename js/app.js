@@ -152,8 +152,8 @@ function createGaugeChart(canvasElement, value, label) {
     let arcColor;
     const v = Number(value);
     
-    if (v >= 30) { arcColor = '#3fb950'; } // Green
-    else if (v >= 15) { arcColor = '#d29922'; } // Yellow
+    if (v >= 20) { arcColor = '#3fb950'; } // Green
+    else if (v >= 10) { arcColor = '#d29922'; } // Yellow
     else { arcColor = '#f85149'; } // Red
     
     // Format the percentage text for center display
