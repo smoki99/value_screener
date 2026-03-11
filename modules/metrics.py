@@ -206,18 +206,22 @@ def compute_metrics(
     gp_a = None
     gross_margin = None
     try:
-        gp = financials.loc['Gross Profit'].iloc[0]
-        assets = balance_sheet.loc['Total Assets'].iloc[0]
-        gp_a = gp / assets
+        if financials is not None and 'Gross Profit' in financials.index:
+            gp = financials.loc['Gross Profit'].iloc[0]
+            if balance_sheet is not None and 'Total Assets' in balance_sheet.index:
+                assets = balance_sheet.loc['Total Assets'].iloc[0]
+                if assets > 0:  # Avoid division by zero
+                    gp_a = gp / assets
     except (KeyError, IndexError, ZeroDivisionError):
         pass
 
     # Calculate Gross Margin
     try:
-        gp = financials.loc['Gross Profit'].iloc[0]
-        revenue = financials.loc['Total Revenue'].iloc[0]
-        if revenue and revenue > 0:
-            gross_margin = gp / revenue
+        if financials is not None and 'Gross Profit' in financials.index:
+            gp = financials.loc['Gross Profit'].iloc[0]
+            revenue = financials.loc['Total Revenue'].iloc[0]
+            if revenue and revenue > 0:
+                gross_margin = gp / revenue
     except (KeyError, IndexError, ZeroDivisionError):
         pass
 
