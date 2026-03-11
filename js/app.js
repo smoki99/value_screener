@@ -109,6 +109,33 @@ function renderTable(tableId, data) {
     `).join('');
 }
 
+// Create center text plugin for Chart.js doughnut charts
+function createCenterTextPlugin(text, fontSize) {
+    return {
+        id: 'centerText',
+        afterDraw: function(chart) {
+            const ctx = chart.ctx;
+            const width = chart.width;
+            const height = chart.height;
+            
+            // Save context
+            ctx.save();
+            
+            // Set text properties - use larger font for visibility
+            ctx.font = 'bold ' + fontSize + 'px Arial';
+            ctx.fillStyle = '#333';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // Draw text at center of chart
+            ctx.fillText(text, width / 2, height / 2);
+            
+            // Restore context
+            ctx.restore();
+        }
+    };
+}
+
 // Create gauge chart using Chart.js - FIXED to prevent absolute positioning wrappers
 function createGaugeChart(canvasElement, value, label) {
     if (!canvasElement) return null;
@@ -129,10 +156,16 @@ function createGaugeChart(canvasElement, value, label) {
     else if (v >= 15) { arcColor = '#d29922'; } // Yellow
     else { arcColor = '#f85149'; } // Red
     
+    // Format the percentage text for center display
+    const percentText = v.toFixed(1) + '%';
+    
+    // Set explicit canvas dimensions to ensure proper rendering
+    canvasElement.width = 200;
+    canvasElement.height = 200;
+    
     const chart = new Chart(canvasElement, {
-        type: 'doughnut',
+        type: '',
         data: {
-            labels: ['Value', 'Remaining'],
             datasets: [{
                 data: [v, 100 - v],
                 backgroundColor: [
@@ -152,10 +185,21 @@ function createGaugeChart(canvasElement, value, label) {
                 autoPadding: false // CRITICAL: Disable auto-padding that causes overflow
             },
             plugins: {
+                datalabels: {
+                    color: '#000',
+                    font: {
+                        weight: 'bold',
+                        size: 14
+                    },
+                    formatter: (value) => { return Math.round(value) + '%'; }
+                },
                 legend: { display: false },
                 tooltip: { enabled: false }
             }
-        }
+        },
+        plugins: [
+            createCenterTextPlugin(percentText, 24)
+        ]
     });
     
     gaugeCharts[canvasId] = chart;

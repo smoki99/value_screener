@@ -463,14 +463,16 @@ table th:hover {
     text-align: center;
 }
 
+/* Gauge stack value - positioned over canvas to show percentage */
 .gauge-stack-value {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 1rem;
-    font-weight: bold;
-    color: #333;
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    font-size: 1rem !important;
+    font-weight: bold !important;
+    color: #333 !important;
+    z-index: 10 !important; /* Ensure it's above the canvas */
 }
 
 /* CRITICAL FIX: Prevent Chart.js from positioning canvas absolutely at modal level */
