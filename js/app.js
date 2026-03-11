@@ -45,6 +45,14 @@ document.getElementById('stockSearchInput').addEventListener('keyup', function()
     }
 });
 
+// Clear search button handler
+document.getElementById('clearSearchBtn').addEventListener('click', function() {
+    const searchInput = document.getElementById('stockSearchInput');
+    searchInput.value = '';
+    renderTable('allTableBody', allData);
+    document.getElementById('searchResultsCount').textContent = '';
+});
+
 // Search stocks by symbol or company name
 function searchStocks(searchTerm) {
     // Filter allData for matching symbol or company_name
@@ -56,11 +64,6 @@ function searchStocks(searchTerm) {
     
     // Update search results count
     document.getElementById('searchResultsCount').textContent = `Found ${results.length} result${results.length !== 1 ? 's' : ''}`;
-    
-    if (results.length === 0) {
-        alert('No stocks found matching your search.');
-        return;
-    }
     
     // Render results in a table
     const tbody = document.getElementById('allTableBody');

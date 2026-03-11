@@ -134,6 +134,23 @@ table th:hover {
     box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
+/* Clear search button */
+.stock-search-container #clearSearchBtn {
+    padding: 8px 12px;
+    background-color: #e9ecef;
+    color: #495057;
+    border: none;
+    border-radius: 6px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.stock-search-container #clearSearchBtn:hover {
+    background-color: #dee2e6;
+    color: #212529;
+}
+
 .stock-search-container button {
     padding: 12px 25px;
     background-color: #667eea;
