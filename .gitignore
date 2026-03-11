@@ -60,6 +60,7 @@ coverage.xml
 cover/
 **/__pycache__/**
 **/*.pyc
+*.csv
 
 # Translations
 *.mo
