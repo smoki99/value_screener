@@ -164,7 +164,7 @@ function createGaugeChart(canvasElement, value, label) {
     canvasElement.height = 200;
     
     const chart = new Chart(canvasElement, {
-        type: '',
+        type: 'doughnut',
         data: {
             datasets: [{
                 data: [v, 100 - v],
