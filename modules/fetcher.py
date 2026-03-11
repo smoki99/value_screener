@@ -180,6 +180,101 @@ def deduplicate_tickers(tickers: list[str]) -> list[str]:
     return [t for t in tickers if t not in skip]
 
 
+def parse_market_cap(value) -> float:
+    """
+    Parse market cap string to float (dollars).
+    Handles: '10.5B', '$10,500M', '10500000000', etc.
+    
+    Args:
+        value: Market cap value (string or number)
+        
+    Returns:
+        Market cap in dollars as float
+    """
+    if pd.isna(value) or value == '-':
+        return 0.0
+    
+    # Convert to string and clean up
+    s = str(value).replace('$', '').replace(',', '').strip()
+    
+    # Handle suffixes (case-insensitive)
+    upper_s = s.upper()
+    if upper_s.endswith('B'):
+        return float(s[:-1]) * 1e9
+    elif upper_s.endswith('M'):
+        return float(s[:-1]) * 1e6
+    elif upper_s.endswith('K'):
+        return float(s[:-1]) * 1e3
+    else:
+        try:
+            return float(s)
+        except:
+            return 0.0
+
+
+def get_nasdaq_largecap_tickers(conn: Any, min_market_cap: float = 10e9) -> list[str]:
+    """
+    Fetch NASDAQ stocks with market cap > threshold from StockAnalysis.com.
+    
+    Args:
+        conn: Database connection for caching
+        min_market_cap: Minimum market cap in dollars (default $10B)
+        
+    Returns:
+        List of ticker symbols, empty list on error
+    """
+    from .cache import get_cached_tickers, save_tickers_to_cache
+    
+    # Check cache first
+    cached = get_cached_tickers(conn)
+    if cached:
+        return cached
+    
+    print(f"  Lade NASDAQ Large-Cap Ticker-Liste (> ${int(min_market_cap/1e9)}B)...")
+    
+    # Use StockAnalysis.com - has clean table with Symbol, Company Name, Market Cap
+    url = 'https://stockanalysis.com/list/nasdaq-stocks/'
+    headers = {'User-Agent': 'Mozilla/5.0'}
+    
+    try:
+        response = requests.get(url, headers=headers, timeout=15)
+        if response.status_code != 200:
+            print(f"ERROR: Konnte StockAnalysis.com nicht erreichen (Status {response.status_code})")
+            return []
+        
+        tables = pd.read_html(io.StringIO(response.text))
+        
+        # Find table with Symbol and Market Cap columns
+        for table in tables:
+            if 'Symbol' in table.columns and 'Market Cap' in table.columns:
+                tickers = []
+                
+                for _, row in table.iterrows():
+                    ticker = str(row['Symbol']).strip()
+                    skip = {'GOOGL', 'FOXA'}
+                    if ticker in skip or not ticker:
+                        continue
+                    
+                    # Check market cap threshold
+                    try:
+                        mc = parse_market_cap(row['Market Cap'])
+                        if mc >= min_market_cap:
+                            tickers.append(ticker)
+                    except Exception as e:
+                        print(f"  Warning: Could not parse market cap for {ticker}: {e}")
+                
+                if tickers:
+                    save_tickers_to_cache(conn, tickers)
+                    print(f"  {len(tickers)} Large-Cap Ticker geladen und gecacht.")
+                    return tickers
+        
+        print("ERROR: Konnte Tabelle mit Symbol und Market Cap nicht finden")
+        return []
+    except requests.RequestException as e:
+        print(f"ERROR: Konnte StockAnalysis.com nicht erreichen: {e}")
+        return []
+
+
 def get_nasdaq100_tickers(conn: Any) -> list[str]:
     """Get NASDAQ-100 ticker list from Wikipedia.
     

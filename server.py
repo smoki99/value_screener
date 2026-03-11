@@ -16,11 +16,18 @@ import pandas as pd
 # Add modules to path
 sys.path.insert(0, '.')
 
+import os
+
+# Configuration for large-cap filtering
+USE_LARGECAP = os.environ.get('USE_LARGECAP', 'true').lower() == 'true'
+MIN_MARKET_CAP = float(os.environ.get('MIN_MARKET_CAP', '10e9'))  # Default $10B
+
 from modules import (
     DB_PATH,
     init_db,
     deduplicate_tickers,
     get_nasdaq100_tickers,
+    get_nasdaq_largecap_tickers,
     analyze_nasdaq100,
 )
 
@@ -70,7 +77,7 @@ def sanitize_for_json(obj):
 
 def run_analysis(conn=None):
     """
-    Run full NASDAQ-100 analysis and update cache.
+    Run full NASDAQ-100 or Large-Cap analysis and update cache.
     Called on startup if data is older than 24 hours.
     
     Args:
@@ -83,17 +90,24 @@ def run_analysis(conn=None):
     db = conn if conn is not None else db_conn
     
     print("\n" + "=" * 60)
-    print("Running NASDAQ-100 Analysis")
+    analysis_type = "NASDAQ Large-Cap (> $10B)"
+    print(f"Running {analysis_type} Analysis")
     print("=" * 60 + "\n")
     
     try:
-        # Get ticker list from Wikipedia (cached)
-        tickers = get_nasdaq100_tickers(db)
+        # Get ticker list based on configuration
+        if USE_LARGECAP:
+            tickers = get_nasdaq_largecap_tickers(db, min_market_cap=MIN_MARKET_CAP)
+            analysis_type = f"NASDAQ Large-Cap (> ${int(MIN_MARKET_CAP/1e9)}B)"
+        else:
+            tickers = get_nasdaq100_tickers(db)
+            analysis_type = "NASDAQ-100"
+        
         if not tickers:
-            print("ERROR: Could not fetch NASDAQ-100 ticker list.")
+            print(f"ERROR: Could not fetch {analysis_type} ticker list.")
             return
         
-        # Deduplicate
+        # Deduplicate (only needed for NASDAQ-100, but safe to always call)
         tickers = deduplicate_tickers(tickers)
         print(f"\nAnalyzing {len(tickers)} stocks...\n")
         
