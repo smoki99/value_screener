@@ -105,7 +105,64 @@ function renderTable(tableId, data) {
     `).join('');
 }
 
-// Show stock details modal
+// Color helper functions based on Novy-Marx paper thresholds
+function getColorClass(value, type) {
+    if (value === null || value === undefined || isNaN(value)) return '';
+    
+    const v = Number(value);
+    
+    switch(type) {
+        case 'gp_a': // GP/A: ≥30% green, 15-30% yellow, <15% red
+            if (v >= 30) return 'c-green';
+            if (v >= 15) return 'c-yellow';
+            return 'c-red';
+        
+        case 'gross_margin': // GM: ≥50% green, 30-50% yellow, <30% red
+            if (v >= 50) return 'c-green';
+            if (v >= 30) return 'c-yellow';
+            return 'c-red';
+        
+        case 'roe': // ROE: ≥20% green, 10-20% yellow, <10% red
+            if (v >= 20) return 'c-green';
+            if (v >= 10) return 'c-yellow';
+            return 'c-red';
+        
+        case 'pb_ratio': // P/B: ≤5 green, 5-15 yellow, >15 red (inverted)
+            if (v <= 5) return 'c-green';
+            if (v <= 15) return 'c-yellow';
+            return 'c-red';
+        
+        case 'peg': // PEG: ≤1.0 green, 1.0-1.5 yellow, >1.5 red
+            if (v <= 1.0) return 'peg-green';
+            if (v <= 1.5) return 'peg-yellow';
+            return 'peg-red';
+        
+        case 'performance': // Performance: ≥0% green, <0% red
+            if (v >= 0) return 'perf-pos';
+            return 'perf-neg';
+        
+        default:
+            return '';
+    }
+}
+
+function getBadgeClass(value, type) {
+    const colorClass = getColorClass(value, type);
+    if (colorClass === 'c-green' || colorClass === 'peg-green') return 'badge-green';
+    if (colorClass === 'c-yellow' || colorClass === 'peg-yellow') return 'badge-yellow';
+    if (colorClass === 'c-red' || colorClass === 'peg-red') return 'badge-red';
+    return '';
+}
+
+function getHighlightClass(value, type) {
+    const colorClass = getColorClass(value, type);
+    if (colorClass === 'c-green' || colorClass === 'peg-green') return 'highlight-green';
+    if (colorClass === 'c-yellow' || colorClass === 'peg-yellow') return 'highlight-yellow';
+    if (colorClass === 'c-red' || colorClass === 'peg-red') return 'highlight-red';
+    return '';
+}
+
+// Show stock details modal with professional color scheme
 function showStockDetails(symbol) {
     // Find the stock in all data arrays
     let stock = null;
@@ -118,7 +175,7 @@ function showStockDetails(symbol) {
         return;
     }
     
-    // Build modal content
+    // Build modal content with color-coded metrics
     const modalContent = `
         <div class="modal-header">
             <h2>${stock.symbol} - ${stock.company_name || stock.name}</h2>
@@ -134,43 +191,106 @@ function showStockDetails(symbol) {
             
             <div class="section">
                 <h3>Price & Market Data</h3>
-                <p><strong>Current Price:</strong> $${formatNumber(stock.price)}</p>
-                <p><strong>Previous Close:</strong> $${formatNumber(stock.previous_close)}</p>
-                <p><strong>Day Range:</strong> $${formatNumber(stock.day_low)} - $${formatNumber(stock.day_high)}</p>
-                <p><strong>52-Week Range:</strong> $${formatNumber(stock.fifty_two_week_low)} - $${formatNumber(stock.fifty_two_week_high)}</p>
-                <p><strong>Market Cap:</strong> ${formatLargeNumber(stock.market_cap)}</p>
+                <div class="metric-row">
+                    <span class="metric-label">Current Price</span>
+                    <span class="metric-value">$${formatNumber(stock.price)}</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Previous Close</span>
+                    <span class="metric-value">$${formatNumber(stock.previous_close)}</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Day Range</span>
+                    <span class="metric-value">$${formatNumber(stock.day_low)} - $${formatNumber(stock.day_high)}</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">52-Week Range</span>
+                    <span class="metric-value">$${formatNumber(stock.fifty_two_week_low)} - $${formatNumber(stock.fifty_two_week_high)}</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Market Cap</span>
+                    <span class="metric-value">${formatLargeNumber(stock.market_cap)}</span>
+                </div>
             </div>
             
             <div class="section">
                 <h3>Valuation Ratios</h3>
-                <p><strong>P/E Ratio (Trailing):</strong> ${formatNumber(stock.pe_ratio, 2)}</p>
-                <p><strong>Forward P/E:</strong> ${formatNumber(stock.forward_pe, 2)}</p>
-                <p><strong>PEG Ratio:</strong> ${formatNumber(stock.peg_ratio, 2)}</p>
-                <p><strong>Forward PEG:</strong> ${formatNumber(stock.forward_peg, 2)}</p>
-                <p><strong>P/B Ratio:</strong> ${formatNumber(stock.pb_ratio, 2)}</p>
-                <p><strong>P/S Ratio:</strong> ${formatNumber(stock.ps_ratio, 2)}</p>
+                <div class="metric-row">
+                    <span class="metric-label">P/E Ratio (Trailing)</span>
+                    <span class="metric-value">${formatNumber(stock.pe_ratio, 2)}</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Forward P/E</span>
+                    <span class="metric-value">${formatNumber(stock.forward_pe, 2)}</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">PEG Ratio</span>
+                    <span class="metric-value ${getColorClass(stock.peg_ratio, 'peg')}">${formatNumber(stock.peg_ratio, 2)}</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Forward PEG</span>
+                    <span class="metric-value ${getColorClass(stock.forward_peg, 'peg')}">${formatNumber(stock.forward_peg, 2)}</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">P/B Ratio</span>
+                    <span class="metric-value ${getColorClass(stock.pb_ratio, 'pb_ratio')}">${formatNumber(stock.pb_ratio, 2)}</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">P/S Ratio</span>
+                    <span class="metric-value">${formatNumber(stock.ps_ratio, 2)}</span>
+                </div>
             </div>
             
             <div class="section">
-                <h3>Profitability Metrics</h3>
-                <p><strong>GP/A (Gross Profit/Assets):</strong> ${formatNumber(stock.gp_a * 100, 1)}%</p>
-                <p><strong>Gross Margin:</strong> ${formatNumber(stock.gross_margin * 100, 1)}%</p>
-                <p><strong>Profit Margin:</strong> ${formatNumber(stock.profit_margin * 100, 1)}%</p>
-                <p><strong>ROE (Return on Equity):</strong> ${formatNumber(stock.roe * 100, 1)}%</p>
-                <p><strong>ROA (Return on Assets):</strong> ${formatNumber(stock.roa * 100, 1)}%</p>
+                <h3>Profitability Metrics (Novy-Marx)</h3>
+                <div class="metric-row">
+                    <span class="metric-label">GP/A (Gross Profit/Assets)</span>
+                    <span class="metric-value ${getColorClass(stock.gp_a * 100, 'gp_a')}">${formatNumber(stock.gp_a * 100, 1)}%</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Gross Margin</span>
+                    <span class="metric-value ${getColorClass(stock.gross_margin * 100, 'gross_margin')}">${formatNumber(stock.gross_margin * 100, 1)}%</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Profit Margin</span>
+                    <span class="metric-value ${getColorClass(stock.profit_margin * 100, 'gross_margin')}">${formatNumber(stock.profit_margin * 100, 1)}%</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">ROE (Return on Equity)</span>
+                    <span class="metric-value ${getColorClass(stock.roe * 100, 'roe')}">${formatNumber(stock.roe * 100, 1)}%</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">ROA (Return on Assets)</span>
+                    <span class="metric-value ${getColorClass(stock.roa * 100, 'roe')}">${formatNumber(stock.roa * 100, 1)}%</span>
+                </div>
             </div>
             
             <div class="section">
                 <h3>Growth Metrics</h3>
-                <p><strong>Asset Growth:</strong> ${formatNumber(stock.asset_growth * 100, 1)}%</p>
-                <p><strong>Revenue Growth (TTM):</strong> ${formatNumber(stock.revenue_growth_ttm * 100, 1)}%</p>
-                <p><strong>Earnings Growth (Quarterly):</strong> ${formatNumber(stock.earnings_growth_quarterly * 100, 1)}%</p>
+                <div class="metric-row">
+                    <span class="metric-label">Asset Growth</span>
+                    <span class="metric-value ${getColorClass(stock.asset_growth * 100, 'roe')}">${formatNumber(stock.asset_growth * 100, 1)}%</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Revenue Growth (TTM)</span>
+                    <span class="metric-value ${getColorClass(stock.revenue_growth_ttm * 100, 'roe')}">${formatNumber(stock.revenue_growth_ttm * 100, 1)}%</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Earnings Growth (Quarterly)</span>
+                    <span class="metric-value ${getColorClass(stock.earnings_growth_quarterly * 100, 'roe')}">${formatNumber(stock.earnings_growth_quarterly * 100, 1)}%</span>
+                </div>
             </div>
             
             <div class="section">
                 <h3>Performance Data</h3>
-                <p><strong>6-Month Performance:</strong> ${formatNumber(stock.perf_6m * 100, 1)}%</p>
-                <p><strong>12-Month Performance:</strong> ${formatNumber(stock.perf_12m * 100, 1)}%</p>
+                <div class="metric-row">
+                    <span class="metric-label">6-Month Performance</span>
+                    <span class="metric-value ${getColorClass(stock.perf_6m * 100, 'performance')}">${formatNumber(stock.perf_6m * 100, 1)}%</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">12-Month Performance</span>
+                    <span class="metric-value ${getColorClass(stock.perf_12m * 100, 'performance')}">${formatNumber(stock.perf_12m * 100, 1)}%</span>
+                </div>
             </div>
             
             <div class="section">
@@ -196,9 +316,18 @@ function showStockDetails(symbol) {
             
             <div class="section">
                 <h3>Scores & Ratings</h3>
-                <p><strong>Star Rating:</strong> ${getStarsHTML(stock.star_rating)}</p>
-                <p><strong>Novy Marx Score:</strong> ${formatNumber(stock.nm_score, 2)}</p>
-                <p><strong>Multi-Factor Score:</strong> ${formatNumber(stock.mf_score, 2)}</p>
+                <div class="metric-row">
+                    <span class="metric-label">Star Rating</span>
+                    <span class="metric-value stars">${getStarsHTML(stock.star_rating)}</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Novy Marx Score</span>
+                    <span class="metric-value">${formatNumber(stock.nm_score, 2)}</span>
+                </div>
+                <div class="metric-row">
+                    <span class="metric-label">Multi-Factor Score</span>
+                    <span class="metric-value">${formatNumber(stock.mf_score, 2)}</span>
+                </div>
             </div>
         </div>
     `;

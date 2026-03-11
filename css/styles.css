@@ -57,6 +57,18 @@ table th:hover {
     margin-left: 5px;
 }
 
+/* Color classes based on Novy-Marx paper */
+.c-green { color: #3fb950; }
+.c-yellow { color: #d29922; }
+.c-red { color: #f85149; }
+
+.peg-green { color: #3fb950; font-weight: 600; }
+.peg-yellow { color: #d29922; font-weight: 600; }
+.peg-red { color: #f85149; font-weight: 600; }
+
+.perf-pos { color: #3fb950; }
+.perf-neg { color: #f85149; }
+
 /* Modal Styles */
 .modal-overlay {
     display: none;
@@ -142,4 +154,47 @@ table th:hover {
 .section p {
     margin: 0.5rem 0;
     color: #333;
+}
+
+/* Badge styles for colored indicators */
+.badge-indicator {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.badge-green { background-color: #3fb950; }
+.badge-yellow { background-color: #d29922; }
+.badge-red { background-color: #f85149; }
+
+/* Highlight boxes for key metrics */
+.highlight-box {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 6px;
+    margin-right: 8px;
+}
+
+.highlight-green { background-color: rgba(63, 185, 80, 0.1); }
+.highlight-yellow { background-color: rgba(210, 153, 34, 0.1); }
+.highlight-red { background-color: rgba(248, 81, 73, 0.1); }
+
+/* Metric row styling */
+.metric-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+}
+
+.metric-label {
+    font-weight: 500;
+    color: #444;
+}
+
+.metric-value {
+    font-family: 'Courier New', monospace;
+    font-size: 1.1rem;
 }
