@@ -6,101 +6,87 @@
     <title>NASDAQ-100 Screener</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Custom CSS -->
+    <!-- Custom Styles -->
     <link href="/css/styles.css" rel="stylesheet">
 </head>
 <body>
-
-<!-- Header Section -->
-<div class="header-section">
-    <div class="container">
-        <h1>📊 NASDAQ-100 Screener</h1>
-        <p class="lead">Real-time stock analysis with Novy-Marx multi-factor scoring</p>
-        <button id="refreshBtn" class="btn btn-light btn-sm mt-2">
-            🔄 Refresh Data
-        </button>
-    </div>
-</div>
-
-<!-- Loading Spinner -->
-<div id="loadingSpinner" class="loading-spinner">
-    <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">Loading...</span>
-    </div>
-    <p class="mt-2">Fetching latest data from server...</p>
-</div>
-
-<!-- Main Content -->
-<div id="mainContent" class="container">
-    <!-- Statistics Cards -->
-    <div class="row mb-4">
-        <div class="col-md-3 mb-3">
-            <div class="card stats-card buy-section h-100">
-                <div class="card-body text-center">
-                    <h5>📈 Buy Recommendations</h5>
-                    <h2 id="buyCount">-</h2>
-                    <small>4-5 Star Stocks</small>
-                </div>
-            </div>
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner" class="loading-spinner">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
         </div>
-        <div class="col-md-3 mb-3">
-            <div class="card stats-card hold-section h-100">
-                <div class="card-body text-center">
-                    <h5>⏳ Hold Recommendations</h5>
-                    <h2 id="holdCount">-</h2>
-                    <small>3 Star Stocks</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3 mb-3">
-            <div class="card stats-card sell-section h-100">
-                <div class="card-body text-center">
-                    <h5>📉 Sell Avoidance</h5>
-                    <h2 id="sellCount">-</h2>
-                    <small>0-2 Star Stocks</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3 mb-3">
-            <div class="card stats-card h-100">
-                <div class="card-body text-center">
-                    <h5>📊 Total Stocks</h5>
-                    <h2 id="totalCount">-</h2>
-                    <small>Last Updated: <span id="lastUpdate">-</span></small>
-                </div>
-            </div>
-        </div>
+        <p>Loading stock data...</p>
     </div>
 
-    <!-- Tabs -->
-    <ul class="nav nav-tabs" id="stockTabs">
-        <li class="nav-item">
-            <a class="nav-link active" data-bs-toggle="tab" href="#buyTab">Buy Recommendations (4-5★)</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" data-bs-toggle="tab" href="#holdTab">Hold Recommendations (3★)</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" data-bs-toggle="tab" href="#sellTab">Sell Avoidance (0-2★)</a>
-        </li>
-    </ul>
+    <!-- Main Content -->
+    <div id="mainContent">
+        <!-- Header Section -->
+        <section class="header-section text-center">
+            <div class="container">
+                <h1>NASDAQ-100 Screener</h1>
+                <p>Comprehensive stock analysis with Novy Marx and Multi-Factor scoring</p>
+                <button id="refreshBtn" class="btn btn-light mt-3">Refresh Data</button>
+            </div>
+        </section>
 
-    <!-- Tab Content -->
-    <div class="tab-content mt-3">
-        <!-- Buy Recommendations Tab -->
-        <div class="tab-pane fade show active" id="buyTab">
+        <!-- Statistics Cards -->
+        <section class="container mb-4">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <div class="card stats-card buy-section h-100">
+                        <div class="card-body text-center">
+                            <h5>Buy Recommendations</h5>
+                            <h2 id="buyCount">-</h2>
+                            <small>(4-5 Stars)</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card stats-card hold-section h-100">
+                        <div class="card-body text-center">
+                            <h5>Hold Recommendations</h5>
+                            <h2 id="holdCount">-</h2>
+                            <small>(3 Stars)</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card stats-card sell-section h-100">
+                        <div class="card-body text-center">
+                            <h5>Sell/Avoid</h5>
+                            <h2 id="sellCount">-</h2>
+                            <small>(0-2 Stars)</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card stats-card bg-primary text-white h-100">
+                        <div class="card-body text-center">
+                            <h5>Total Stocks</h5>
+                            <h2 id="totalCount">-</h2>
+                            <small>Last Update: <span id="lastUpdate">-</span></small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Buy Recommendations Table -->
+        <section class="container mb-4">
+            <h2>Buy Recommendations (4-5 Stars)</h2>
+            <p class="text-muted">Click on any stock to view detailed information</p>
             <div class="table-responsive">
-                <table class="table table-hover">
+                <table class="table table-striped table-hover">
                     <thead>
                         <tr>
-                            <th onclick="sortTable('symbol')">Symbol <span class="sort-indicator">↕</span></th>
+                            <th>Symbol</th>
                             <th>Company Name</th>
-                            <th onclick="sortTable('stars')">Stars <span class="sort-indicator">↕</span></th>
-                            <th onclick="sortTable('price')">Price <span class="sort-indicator">↕</span></th>
-                            <th onclick="sortTable('forward_peg')">Forward PEG <span class="sort-indicator">↕</span></th>
-                            <th onclick="sortTable('gp_a')">GP/A <span class="sort-indicator">↕</span></th>
-                            <th onclick="sortTable('roe')">ROE % <span class="sort-indicator">↕</span></th>
-                            <th onclick="sortTable('profit_margin')">Profit Margin % <span class="sort-indicator">↕</span></th>
+                            <th>Stars</th>
+                            <th>Price</th>
+                            <th>Forward PEG</th>
+                            <th>GP/A</th>
+                            <th>ROE</th>
+                            <th>Profit Margin</th>
                         </tr>
                     </thead>
                     <tbody id="buyTableBody">
@@ -108,22 +94,24 @@
                     </tbody>
                 </table>
             </div>
-        </div>
+        </section>
 
-        <!-- Hold Recommendations Tab -->
-        <div class="tab-pane fade" id="holdTab">
+        <!-- Hold Recommendations Table -->
+        <section class="container mb-4">
+            <h2>Hold Recommendations (3 Stars)</h2>
+            <p class="text-muted">Click on any stock to view detailed information</p>
             <div class="table-responsive">
-                <table class="table table-hover">
+                <table class="table table-striped table-hover">
                     <thead>
                         <tr>
-                            <th onclick="sortTable('symbol')">Symbol <span class="sort-indicator">↕</span></th>
+                            <th>Symbol</th>
                             <th>Company Name</th>
-                            <th onclick="sortTable('stars')">Stars <span class="sort-indicator">↕</span></th>
-                            <th onclick="sortTable('price')">Price <span class="sort-indicator">↕</span></th>
-                            <th onclick="sortTable('forward_peg')">Forward PEG <span class="sort-indicator">↕</span></th>
-                            <th onclick="sortTable('gp_a')">GP/A <span class="sort-indicator">↕</span></th>
-                            <th onclick="sortTable('roe')">ROE % <span class="sort-indicator">↕</span></th>
-                            <th onclick="sortTable('profit_margin')">Profit Margin % <span class="sort-indicator">↕</span></th>
+                            <th>Stars</th>
+                            <th>Price</th>
+                            <th>Forward PEG</th>
+                            <th>GP/A</th>
+                            <th>ROE</th>
+                            <th>Profit Margin</th>
                         </tr>
                     </thead>
                     <tbody id="holdTableBody">
@@ -131,22 +119,24 @@
                     </tbody>
                 </table>
             </div>
-        </div>
+        </section>
 
-        <!-- Sell Avoidance Tab -->
-        <div class="tab-pane fade" id="sellTab">
+        <!-- Sell/Avoid Table -->
+        <section class="container mb-4">
+            <h2>Sell/Avoid (0-2 Stars)</h2>
+            <p class="text-muted">Click on any stock to view detailed information</p>
             <div class="table-responsive">
-                <table class="table table-hover">
+                <table class="table table-striped table-hover">
                     <thead>
                         <tr>
-                            <th onclick="sortTable('symbol')">Symbol <span class="sort-indicator">↕</span></th>
+                            <th>Symbol</th>
                             <th>Company Name</th>
-                            <th onclick="sortTable('stars')">Stars <span class="sort-indicator">↕</span></th>
-                            <th onclick="sortTable('price')">Price <span class="sort-indicator">↕</span></th>
-                            <th onclick="sortTable('forward_peg')">Forward PEG <span class="sort-indicator">↕</span></th>
-                            <th onclick="sortTable('gp_a')">GP/A <span class="sort-indicator">↕</span></th>
-                            <th onclick="sortTable('roe')">ROE % <span class="sort-indicator">↕</span></th>
-                            <th onclick="sortTable('profit_margin')">Profit Margin % <span class="sort-indicator">↕</span></th>
+                            <th>Stars</th>
+                            <th>Price</th>
+                            <th>Forward PEG</th>
+                            <th>GP/A</th>
+                            <th>ROE</th>
+                            <th>Profit Margin</th>
                         </tr>
                     </thead>
                     <tbody id="sellTableBody">
@@ -154,14 +144,21 @@
                     </tbody>
                 </table>
             </div>
+        </section>
+    </div>
+
+    <!-- Stock Details Modal -->
+    <div id="stockModal" class="modal-overlay">
+        <div class="modal-container">
+            <div id="modalContent">
+                <!-- Content will be dynamically inserted here -->
+            </div>
         </div>
     </div>
-</div>
 
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<!-- Custom JavaScript -->
-<script src="/js/app.js"></script>
-
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="/js/app.js"></script>
 </body>
 </html>
