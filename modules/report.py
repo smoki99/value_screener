@@ -35,7 +35,7 @@ def build_unified_row(
     from .scoring import score_novy_marx, score_multi_factor, get_star_rating
     from .fetcher import calculate_asset_growth
     
-    # Compute metrics
+    # Compute metrics - this includes gp_a calculation
     metrics = compute_metrics(info, financials, balance_sheet, perf_6m, perf_12m, growth_estimates)
     
     # Get PEG values with source tracking
@@ -54,14 +54,15 @@ def build_unified_row(
     return {
         'symbol': symbol,
         'name': info.get('shortName', ''),
+        'company_name': info.get('shortName', ''),
         'price': info.get('regularMarketPrice'),
         'market_cap': info.get('marketCap'),
         'pe_ratio': info.get('trailingPE'),
         'forward_pe': info.get('forwardPE'),
         'peg_ratio': gaap_peg,
         'forward_peg': forward_peg,
-        'growth_rate': metrics['growth_used'],
-        'gross_margin': info.get('grossMargins'),
+        'gp_a': metrics['gp_a'],  # GP/A from compute_metrics
+        'gross_margin': metrics['gross_margin'],
         'profit_margin': info.get('profitMargins'),
         'roe': info.get('returnOnEquity'),
         'pb_ratio': info.get('priceToBook'),

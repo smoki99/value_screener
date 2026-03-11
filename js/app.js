@@ -89,7 +89,7 @@ function renderTable(tableId, data) {
     const tbody = document.getElementById(tableId);
     
     if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center">No data available</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center">No data available</td></tr>';
         return;
     }
     
@@ -106,6 +106,7 @@ function renderTable(tableId, data) {
             <td class="stars">${getStarsHTML(stock.star_rating)}</td>
             <td>$${formatNumber(stock.price)}</td>
             <td>${formatNumber(stock.forward_peg, 2)}</td>
+            <td>${formatNumber(stock.gp_a * 100, 1)}%</td>
             <td>${formatNumber(stock.roe * 100, 1)}%</td>
             <td>${formatNumber(stock.profit_margin * 100, 1)}%</td>
         </tr>
