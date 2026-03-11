@@ -673,9 +673,28 @@ function sortTable(column) {
         sortDirection = 'asc';
     }
     
-    renderTable('buyTableBody', buyData);
-    renderTable('holdTableBody', holdData);
-    renderTable('sellTableBody', sellData);
+    // Sort all tables by the selected column
+    const sortedBuyData = [...buyData].sort((a, b) => compareValuesForSort(a[column], b[column]));
+    const sortedHoldData = [...holdData].sort((a, b) => compareValuesForSort(a[column], b[column]));
+    const sortedSellData = [...sellData].sort((a, b) => compareValuesForSort(a[column], b[column]));
+    
+    renderTable('buyTableBody', sortedBuyData);
+    renderTable('holdTableBody', sortedHoldData);
+    renderTable('sellTableBody', sortedSellData);
+}
+
+// Compare values for sorting (used by sortTable)
+function compareValuesForSort(a, b) {
+    if (a === null || a === undefined) return 1;
+    if (b === null || b === undefined) return -1;
+    
+    const numA = typeof a === 'string' ? parseFloat(a) : a;
+    const numB = typeof b === 'string' ? parseFloat(b) : b;
+    
+    if (isNaN(numA)) return 1;
+    if (isNaN(numB)) return -1;
+    
+    return sortDirection === 'asc' ? numA - numB : numB - numA;
 }
 
 // Show/hide loading spinner
