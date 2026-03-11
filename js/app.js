@@ -436,17 +436,39 @@ function showStockDetails(symbol) {
                 <div class="symbol-row">
                     <div>
                         <span class="symbol-name">${stock.symbol}</span>
-                        <span class="company-name"> - ${stock.company_name || stock.name}</span>
+                        <span class="company-name"> - ${stock.company_name || stock.name}</span><span class="stars"> ${getStarsHTML(stock.star_rating)}</span>
                     </div>
                     <div class="price-display">
-                        <div class="current-price">$${formatNumber(stock.price)}</div>
-                        <div class="market-cap-badge ${marketCapClass}">${formatLargeNumber(stock.market_cap)}</div>
+                        <div class="current-price">Last Close: $${formatNumber(stock.price)}</div>
+                        <div class="market-cap-badge ${marketCapClass}">Marktkapitalisierung: ${formatLargeNumber(stock.market_cap)}</div>
                     </div>
                 </div>
+
                 <div class="basic-info-row">
                     <span class="info-item"><span class="info-label">Sector:</span> ${stock.sector || 'N/A'}</span>
                     <span class="info-item"><span class="info-label">Industry:</span> ${stock.industry || 'N/A'}</span>
                     <span class="info-item"><span class="info-label">Employees:</span> ${formatNumber(stock.full_time_employees)}</span>
+                    <span class="info-item"><span class="info-label">Stand:</span> ${new Date().toLocaleDateString('de-DE')}</span>
+                </div>
+            </div>
+            
+            <!-- Quick Stats Row -->
+            <div class="quick-stats-row">
+                <div class="stat-item">
+                    <div class="stat-label">Forward PEG</div>
+                    <div class="stat-value ${getColorClass(stock.forward_peg, 'peg')}">${formatNumber(stock.forward_peg, 2)}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Trailing PEG</div>
+                    <div class="stat-value ${getColorClass(stock.peg_ratio, 'peg')}">${formatNumber(stock.peg_ratio, 2)}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Dividend Yield</div>
+                    <div class="stat-value">${formatNumber(stock.dividend_yield * 100, 2)}%</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Quality Score (NM)</div>
+                    <div class="stat-value">${formatNumber(stock.nm_score, 1)}</div>
                 </div>
             </div>
             
@@ -503,26 +525,6 @@ function showStockDetails(symbol) {
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-            
-            <!-- Quick Stats Row -->
-            <div class="quick-stats-row">
-                <div class="stat-item">
-                    <div class="stat-label">Star Rating</div>
-                    <div class="stat-value stars">${getStarsHTML(stock.star_rating)}</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">PEG Ratio</div>
-                    <div class="stat-value ${getColorClass(stock.peg_ratio, 'peg')}">${formatNumber(stock.peg_ratio, 2)}</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">Forward PEG</div>
-                    <div class="stat-value ${getColorClass(stock.forward_peg, 'peg')}">${formatNumber(stock.forward_peg, 2)}</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-label">Quality Score (NM)</div>
-                    <div class="stat-value">${formatNumber(stock.nm_score, 1)}</div>
                 </div>
             </div>
             
