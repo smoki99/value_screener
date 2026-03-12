@@ -53,3 +53,27 @@ jobs:
       
       - name: Run JavaScript tests with Jest
         run: npm test
+
+  deploy-docker:
+    runs-on: ubuntu-latest
+    # This ensures it only runs if the test jobs succeed
+    needs: [python-tests, javascript-tests]
+    # Only push on main branch (optional, prevents pushing dev/PR code to latest)
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and Push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKER_USERNAME }}/nasdaq-screener:latest
