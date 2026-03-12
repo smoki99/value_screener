@@ -1,41 +1,50 @@
 #!/bin/bash
-# NASDAQ-100 Screener - Docker Server Runner with Local Cache DB
+# NASDAQ-100 Screener - Local Docker Server Runner
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# --- CONFIGURATION ---
+# "nasdaq-screener" is clean, lowercase, and matches your repo name
+IMAGE_NAME="nasdaq-screener:latest"  
+CONTAINER_NAME="nasdaq-screener-server"
 CACHE_DIR="$HOME/.nasdaq-screener-cache"
-DB_FILE="$CACHE_DIR/screener.db"
 
-# Create cache directory if it doesn't exist
+# Ensure local cache exists
 mkdir -p "$CACHE_DIR"
-touch "$DB_FILE"
-echo "Using local cache database: $DB_FILE"
+echo "Using local cache directory: $CACHE_DIR"
 
-# Build Docker image (if not already built)
-docker build -t nasdaq-screener "$SCRIPT_DIR" > /dev/null 2>&1 || true
+# 1. Build the image locally
+# Using --pull ensures we always have the latest base python/node images
+echo "Building local image: $IMAGE_NAME..."
+docker build --pull -t "$IMAGE_NAME" .
+
+# 2. Stop and remove existing container if running
+# This prevents 'name already in use' errors
+echo "Cleaning up old containers..."
+docker stop "$CONTAINER_NAME" >/dev/null 2>&1 || true
+docker rm "$CONTAINER_NAME" >/dev/null 2>&1 || true
 
 echo "========================================"
 echo "Starting NASDAQ-100 Screener Server"
 echo "========================================"
-echo "Cache DB: $DB_FILE"
-echo "Server URL: http://localhost:5000"
 
-# Run Docker container with cache volume mount and server mode
-docker run --rm -d \
-    --name nasdaq-screener-server \
+# 3. Run the container
+# --restart unless-stopped keeps it alive across reboots
+docker run -d \
+    --name "$CONTAINER_NAME" \
     -p 5000:5000 \
     -v "$CACHE_DIR:/app/cache" \
     -e CACHE_DB_PATH="/app/cache/screener.db" \
     -e LOG_LEVEL=INFO \
     -e FLASK_ENV=production \
-    nasdaq-screener \
-    bash -c "source venv/bin/activate && cd server && flask run --host=0.0.0.0 --port=5000"
+    --restart unless-stopped \
+    "$IMAGE_NAME"
 
 echo "========================================"
-echo "Server started!"
-echo "Access at: http://localhost:5000"
-echo "Stop with: docker stop nasdaq-screener-server"
-echo "View logs with: docker logs -f nasdaq-screener-server"
-echo "Change log level by editing LOG_LEVEL in this script (DEBUG, INFO, WARNING, ERROR)"
+echo "Server started at: http://localhost:5000"
+echo "Image Name:  $IMAGE_NAME"
+echo "Container:   $CONTAINER_NAME"
+echo "----------------------------------------"
+echo "Logs: docker logs -f $CONTAINER_NAME"
+echo "Stop: docker stop $CONTAINER_NAME"
 echo "========================================"
