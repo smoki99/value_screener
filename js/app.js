@@ -707,20 +707,6 @@ function formatLargeNumber(num) {
     return '$' + formatNumber(n);
 }
 
-// Compare values for sorting
-function compareValues(a, b) {
-    if (a === null || a === undefined) return 1;
-    if (b === null || b === undefined) return -1;
-    
-    const numA = typeof a === 'string' ? parseFloat(a) : a;
-    const numB = typeof b === 'string' ? parseFloat(b) : b;
-    
-    if (isNaN(numA)) return 1;
-    if (isNaN(numB)) return -1;
-    
-    return sortDirection === 'asc' ? numA - numB : numB - numA;
-}
-
 // Sort table by column
 function sortTable(column) {
     if (sortColumn === column) {
