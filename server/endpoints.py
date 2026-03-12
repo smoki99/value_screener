@@ -345,29 +345,35 @@ def register_all_routes():
         total = len(cached_data)
         
         # Count buy: rounded star rating >= 4 AND <= 5 AND forward_peg <= 1.5
+        # Ensure each item is a dict before calling .get()
         buy_count = sum(
             1 for s in cached_data 
-            if s.get('star_rating') is not None and 
+            if isinstance(s, dict) and
+               s.get('star_rating') is not None and 
                round(s.get('star_rating')) >= 4 and 
                round(s.get('star_rating')) <= 5 and
                (s.get('forward_peg') is None or s.get('forward_peg') <= 1.5)
         )
         
         # Count hold: rounded star rating == 3 AND forward_peg <= 1.5
+        # Ensure each item is a dict before calling .get()
         hold_count = sum(
             1 for s in cached_data 
-            if s.get('star_rating') is not None and 
+            if isinstance(s, dict) and
+               s.get('star_rating') is not None and 
                round(s.get('star_rating')) == 3 and
                (s.get('forward_peg') is None or s.get('forward_peg') <= 1.5)
         )
         
         # Count sell: rounded star rating <= 2 OR quality_rating is '★' or '—' OR forward_peg > 1.5
+        # Ensure each item is a dict before calling .get()
         sell_count = sum(
             1 for s in cached_data 
-            if (s.get('star_rating') is None or round(s.get('star_rating')) <= 2) or
-               s.get('quality_rating') == '★' or
-               s.get('quality_rating') == '—' or
-               (s.get('forward_peg') is not None and s.get('forward_peg') > 1.5)
+            if isinstance(s, dict) and
+               ((s.get('star_rating') is None or round(s.get('star_rating')) <= 2) or
+                s.get('quality_rating') == '★' or
+                s.get('quality_rating') == '—' or
+                (s.get('forward_peg') is not None and s.get('forward_peg') > 1.5))
         )
         
         return jsonify({

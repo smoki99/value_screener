@@ -1,0 +1,16 @@
+.git/
+.gitignore
+node_modules/
+venv/
+__pycache__/
+*.pyc
+*.db
+.DS_Store
+*.log
+test-results/
+coverage/
+.pytest_cache/
+.idea/
+.vscode/
+.env
+.env.local
