@@ -23,7 +23,7 @@ docker run --rm \
     -e CACHE_DB_PATH="/app/cache/screener.db" \
     -e FLASK_ENV=testing \
     nasdaq-screener-test \
-    bash -c "pytest tests/ -v && npm test"
+    bash -c ". venv/bin/activate && python -m pytest tests/ -v && npm test"
 
 echo "========================================"
 echo "Tests completed!"

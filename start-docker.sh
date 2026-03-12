@@ -9,9 +9,9 @@ IMAGE_NAME="nasdaq-screener:latest"
 CONTAINER_NAME="nasdaq-screener-server"
 CACHE_DIR="$HOME/.nasdaq-screener-cache"
 
-# Ensure local cache exists
-mkdir -p "$CACHE_DIR"
-echo "Using local cache directory: $CACHE_DIR"
+# Copy local DB to temp file for Docker (allows parallel run with local dev)
+cp nasdaq100_cache.db nasdaq100_cache_tempdocker.db 2>/dev/null || true
+echo "Using Docker cache: nasdaq100_cache_tempdocker.db"
 
 # 1. Build the image locally
 # Using --pull ensures we always have the latest base python/node images
@@ -33,8 +33,7 @@ echo "========================================"
 docker run -d \
     --name "$CONTAINER_NAME" \
     -p 5000:5000 \
-    -v "$CACHE_DIR:/app/cache" \
-    -e CACHE_DB_PATH="/app/cache/screener.db" \
+    -v "$(pwd)/nasdaq100_cache_tempdocker.db:/app/nasdaq100_cache.db" \
     -e LOG_LEVEL=INFO \
     -e FLASK_ENV=production \
     --restart unless-stopped \
