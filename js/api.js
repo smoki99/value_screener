@@ -1,7 +1,7 @@
 // API module - handles all server communication
 const API_BASE = 'http://localhost:5000';
 
-// Global data storage
+/** @constant {Array} Global data storage for all stocks */
 let allData = [];
 let buyData = [];
 let holdData = [];
@@ -9,6 +9,8 @@ let sellData = [];
 
 /**
  * Fetch all stock data from the API
+ * Retrieves stats, all stocks, and categorized recommendations (buy/hold/sell)
+ * @returns {Promise<void>}
  */
 async function fetchData() {
     showLoading(true);

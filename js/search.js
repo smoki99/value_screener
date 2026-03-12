@@ -4,7 +4,7 @@
 let searchTimeout;
 
 /**
- * Initialize search event listeners
+ * Initialize search event listeners and tab change handlers
  */
 function initSearch() {
     const searchInput = document.getElementById('stockSearchInput');
@@ -17,6 +17,41 @@ function initSearch() {
     if (clearBtn) {
         clearBtn.addEventListener('click', clearSearch);
     }
+    
+    // Add tab change event listeners to clear search when switching tabs
+    const navLinks = document.querySelectorAll('#recommendationTabs .nav-link');
+    navLinks.forEach(link => {
+        link.addEventListener('click', handleTabChange);
+    });
+}
+
+/**
+ * Handle tab change - clears search and resets all tables
+ */
+function handleTabChange() {
+    // Clear search input
+    const searchInput = document.getElementById('stockSearchInput');
+    if (searchInput) {
+        searchInput.value = '';
+    }
+    
+    // Hide clear button
+    const clearBtn = document.getElementById('clearSearchBtn');
+    if (clearBtn) {
+        clearBtn.style.display = 'none';
+    }
+    
+    // Clear search results count
+    const resultsCount = document.getElementById('searchResultsCount');
+    if (resultsCount) {
+        resultsCount.textContent = '';
+    }
+    
+    // Reset all tables to show full data
+    renderTable('allTableBody', allData);
+    renderTable('buyTableBody', buyData);
+    renderTable('holdTableBody', holdData);
+    renderTable('sellTableBody', sellData);
 }
 
 /**

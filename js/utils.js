@@ -1,5 +1,14 @@
 // Utility functions for the Value Screener
 
+/** @constant {object} Color thresholds based on Novy-Marx paper */
+const COLOR_THRESHOLDS = {
+    gp_a: { green: 30, yellow: 15 },
+    gross_margin: { green: 50, yellow: 30 },
+    roe: { green: 20, yellow: 10 },
+    pb_ratio: { green: 5, yellow: 15 },
+    peg: { yellow_low: 0.4, green: 1.0, yellow_high: 1.5 }
+};
+
 // Format number with commas and decimals
 function formatNumber(num, decimals = 0) {
     if (num === null || num === undefined || isNaN(num)) return '-';
@@ -41,32 +50,35 @@ function getColorClass(value, type) {
     if (value === null || value === undefined || isNaN(value)) return '';
     
     const v = Number(value);
+    const thresholds = COLOR_THRESHOLDS[type];
+    
+    if (!thresholds) return '';
     
     switch(type) {
         case 'gp_a':
-            if (v >= 30) return 'c-green';
-            if (v >= 15) return 'c-yellow';
+            if (v >= thresholds.green) return 'c-green';
+            if (v >= thresholds.yellow) return 'c-yellow';
             return 'c-red';
         
         case 'gross_margin':
-            if (v >= 50) return 'c-green';
-            if (v >= 30) return 'c-yellow';
+            if (v >= thresholds.green) return 'c-green';
+            if (v >= thresholds.yellow) return 'c-yellow';
             return 'c-red';
         
         case 'roe':
-            if (v >= 20) return 'c-green';
-            if (v >= 10) return 'c-yellow';
+            if (v >= thresholds.green) return 'c-green';
+            if (v >= thresholds.yellow) return 'c-yellow';
             return 'c-red';
         
         case 'pb_ratio':
-            if (v <= 5) return 'c-green';
-            if (v <= 15) return 'c-yellow';
+            if (v <= thresholds.green) return 'c-green';
+            if (v <= thresholds.yellow) return 'c-yellow';
             return 'c-red';
         
         case 'peg':
-            if (v <= 0.4) return 'peg-yellow';
-            if (v <= 1.0) return 'peg-green';
-            if (v <= 1.5) return 'peg-yellow';
+            if (v <= thresholds.yellow_low) return 'peg-yellow';
+            if (v <= thresholds.green) return 'peg-green';
+            if (v <= thresholds.yellow_high) return 'peg-yellow';
             return 'peg-red';
         
         case 'performance':
