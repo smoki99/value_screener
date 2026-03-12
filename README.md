@@ -203,6 +203,17 @@ curl -X POST http://localhost:5000/api/analyze
 
 ### Run Tests
 
+**Using test.sh (Recommended):**
+```bash
+chmod +x test.sh && ./test.sh
+```
+
+The test script automatically:
+1. Creates virtual environment if missing
+2. Installs dependencies and pytest
+3. Runs all tests with verbose output
+
+**Manual Test Run:**
 ```bash
 # Install pytest if not already installed
 pip install pytest
