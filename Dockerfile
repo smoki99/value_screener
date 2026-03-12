@@ -33,20 +33,23 @@ RUN apt-get update && \
         curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy Python packages from builder
+# Copy Python packages from builder (cached layer)
 COPY --from=python-builder /root/.local /root/.local
 ENV PATH=/root/.local/bin:$PATH
 
-# Copy Node.js modules from builder
+# Copy Node.js modules from builder (cached layer)
 COPY --from=node-builder /app/node_modules ./node_modules
 
-# Copy project source code
-COPY . .
+# Copy dependency files FIRST (for venv installation - cached when deps don't change)
+COPY requirements.txt .
 
-# Create virtual environment and install dependencies fresh
+# Create virtual environment and install dependencies (CACHED LAYER)
 RUN python3 -m venv venv && \
     . venv/bin/activate && \
     pip install --no-cache-dir -r requirements.txt
+
+# Copy project source code LAST (changes here don't invalidate dependency layers)
+COPY . .
 
 # Create cache directory for SQLite database (volume mount point)
 VOLUME ["/app/cache"]

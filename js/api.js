@@ -1,5 +1,5 @@
 
-/** @constant {Array} Global data storage for all stocks */
+/** @constant {Array} Global data storage for all stocks   */
 let allData = [];
 let buyData = [];
 let holdData = [];
