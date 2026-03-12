@@ -239,6 +239,8 @@ function createGaugeChart(canvasElement, value, label) {
     
     let arcColor;
     const v = Number(value);
+    // For negative values: show full red circle but keep actual value in text
+    const gaugeValue = v <= 0 ? 100 : v;
     
     if (v >= 20) { arcColor = '#3fb950'; }
     else if (v >= 10) { arcColor = '#d29922'; }
@@ -253,7 +255,7 @@ function createGaugeChart(canvasElement, value, label) {
         type: 'doughnut',
         data: {
             datasets: [{
-                data: [v, 100 - v],
+                data: [gaugeValue, 100 - gaugeValue],
                 backgroundColor: [
                     arcColor,
                     '#e9ecef'
