@@ -1,8 +1,11 @@
 # Simplified Docker build for NASDAQ-100 Screener
 FROM python:3.12-slim
 
-LABEL maintainer="NASDAQ-100 Screener"
-LABEL description="Production container for NASDAQ-100 Stock Screener"
+LABEL maintainer="smoki99 <nasdaq-screener@github.com>"
+LABEL version="1.0.0"
+LABEL description="NASDAQ-100 Stock Screener - Multi-factor analysis tool with Novy-Marx methodology"
+LABEL org.opencontainers.image.source="https://github.com/smoki99/value_screener"
+LABEL org.opencontainers.image.description="Production container for NASDAQ-100 Stock Screener with Flask API and web interface"
 
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1

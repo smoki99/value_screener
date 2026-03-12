@@ -44,7 +44,10 @@ Stocks are categorized into three groups:
 
 ```
 value_screener/
-├── server.py              # Flask API server with REST endpoints
+├── server/                # Flask API server components
+│   ├── app.py            # Application initialization, configuration, frontend serving
+│   ├── data_processing.py# Data conversion and sanitization functions
+│   └── endpoints.py      # API endpoint handlers (routes registered dynamically)
 ├── frontend.html          # Web interface HTML file
 ├── requirements.txt       # Python dependencies
 ├── css/styles.css         # Frontend styles (responsive design)
@@ -57,13 +60,21 @@ value_screener/
 │   ├── metrics.py        # Financial metric calculations
 │   ├── scoring.py        # Star rating and multi-factor scoring
 │   ├── ranking.py        # Percentile rank calculations
-│   └── report.py         # Analysis and table generation
-├── tests/                 # Unit tests (67 passing)
+│   ├── report.py         # Analysis and table generation
+│   ├── colors.py         # Color coding utilities for Novy-Marx thresholds
+│   ├── html_report.py    # HTML report generation functions
+│   ├── html_template.py  # HTML template rendering
+│   └── logging_config.py # Logging configuration setup
+├── tests/                 # Unit tests (67 Python + ~10 JavaScript)
 │   ├── test_cache.py     # Cache module tests
 │   ├── test_colors.py    # Color utility tests
 │   ├── test_config.py    # Configuration tests
 │   ├── test_fetcher.py   # Fetcher module tests
-│   └── test_metrics.py   # Metrics calculation tests
+│   ├── test_metrics.py   # Metrics calculation tests
+│   └── js/               # JavaScript unit tests with Jest
+├── Dockerfile             # Container configuration for deployment
+├── build-docker.sh        # Script to build Docker image
+├── start-docker.sh        # Script to run container with port mapping
 ├── nasdaq100_cache.db    # SQLite cache database (auto-generated)
 └── README.md             # This documentation file
 ```
@@ -183,6 +194,7 @@ Open your browser and navigate to:
 | `/api/sell-avoidance` | GET | 0-2 star stocks (sell/avoid recommendations) |
 | `/api/stats` | GET | Summary statistics (total, buy, hold, sell counts) |
 | `/api/stock/{symbol}` | GET | Individual stock details by ticker symbol |
+| `/api/stock/{symbol}/history` | GET | Historical OHLCV data with moving averages |
 | `/api/analyze` | POST | Trigger fresh analysis from Yahoo Finance |
 
 ### Example API Usage
@@ -196,6 +208,15 @@ curl http://localhost:5000/api/buy-recommendations
 
 # Get summary statistics
 curl http://localhost:5000/api/stats
+
+# Get individual stock details by symbol
+curl http://localhost:5000/api/stock/AAPL
+
+# Get historical price data with moving averages (2 years default)
+curl "http://localhost:5000/api/stock/AAPL/history"
+
+# Get 3 years of historical data
+curl "http://localhost:5000/api/stock/AAPL/history?period=3y"
 
 # Trigger fresh analysis
 curl -X POST http://localhost:5000/api/analyze
@@ -239,6 +260,8 @@ The project includes:
 
 ## Configuration
 
+### Python Configuration
+
 Edit `modules/config.py` to customize:
 
 - **DB_PATH**: Location of SQLite cache database (default: `nasdaq100_cache.db`)
@@ -249,6 +272,29 @@ Example configuration:
 # modules/config.py
 DB_PATH = "nasdaq100_cache.db"
 CACHE_MAX_AGE_HOURS = 24
+```
+
+### Environment Variables
+
+The server supports the following environment variables for runtime configuration:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `USE_LARGECAP` | `true` | Enable large-cap filtering (true/false) |
+| `MIN_MARKET_CAP` | `10e9` | Minimum market cap in dollars ($10B default) |
+
+Example usage:
+```bash
+# Linux/Mac - filter stocks with minimum $20B market cap
+export USE_LARGECAP=true
+export MIN_MARKET_CAP=20e9
+python server/app.py
+```
+
+```cmd
+:: Windows - disable large-cap filtering
+set USE_LARGECAP=false
+python server\app.py
 ```
 
 ## Dependencies
@@ -304,3 +350,107 @@ This project is provided as-is for educational purposes.
 - First run may take several minutes; subsequent runs are faster due to caching
 - Web interface includes timestamp of analysis and can be opened in any modern web browser
 - SQLite database is not thread-safe, so the server runs with threading disabled for stability
+
+## Docker Deployment
+
+The project supports containerized deployment using Docker.
+
+### Build Docker Image
+
+```bash
+# Make build script executable (if needed)
+chmod +x build-docker.sh
+
+# Build the Docker image
+./build-docker.sh
+```
+
+This creates a Docker image named `value_screener` based on the provided Dockerfile.
+
+### Run Container
+
+```bash
+# Make start script executable (if needed)
+chmod +x start-docker.sh
+
+# Run container with port mapping to localhost:5000
+./start-docker.sh
+```
+
+The container will:
+1. Start the Flask API server on port 5000
+2. Map the port to your host machine (http://localhost:5000)
+3. Auto-refresh data if older than 24 hours on startup
+4. Serve both web interface and REST API endpoints
+
+### Manual Docker Commands
+
+```bash
+# Build image manually
+docker build -t value_screener .
+
+# Run container with port mapping
+docker run -p 5000:5000 --name value_screener_container value_screener
+```
+
+### Stop and Remove Container
+
+```bash
+# Stop running container
+docker stop value_screener_container
+
+# Remove container (optional)
+docker rm value_screener_container
+```
+
+## Technical Specifications
+
+For detailed calculation formulas and threshold specifications, see [`financial_ratio.md`](financial_ratio.md):
+- Forward PEG growth source priority rules (GE-2Y → EE-2Y → GE-1Y → info-eGr)
+- Star rating thresholds for all metrics (GP/A, ROE, P/B, fPEG, Momentum 12M)
+- Quality star ratings methodology
+- Decile ranking calculations
+
+### Forward PEG Growth Source Priority
+
+The screener uses a priority-based approach to determine growth estimates:
+
+| Priority | Source | Description |
+|----------|--------|-------------|
+| 1 | GE-2Y | Blended 2-year from stock.growth_estimates (0y + 1y) |
+| 2 | EE-2Y | Blended 2-year from stock.earnings_estimate (0y + 1y) |
+| 3 | GE-1Y / EE-1Y | Single year '+1y' value directly |
+| 4 | info-eGr | Fallback to stock.info['earningsGrowth'] with dampening |
+
+### Growth Capping Rules
+
+| Source Type | Cap | Dampening Formula |
+|-------------|-----|-------------------|
+| GE-2Y / EE-2Y | 60% | None |
+| GE-1Y / EE-1Y | 60% | None |
+| info-eGr | 50% (dampened) | base = min(g, 30%) + max(0, g - 30%) × 20% |
+
+### Scoring Model Weight Comparison
+
+**Novy-Marx Score:**
+- GP/A: 40%
+- P/B: 35%
+- Momentum 12M: 25%
+
+**Multi-Factor Score:**
+- GP/A: 25%
+- ROE: 20%
+- P/B: 20%
+- fPEG: 15%
+- Momentum 12M: 20%
+
+### Quality Star Ratings
+
+Based on best(NM, MF) combined score:
+
+| Quality | Score Range |
+|---------|-------------|
+| ★★★ | ≥ 4.5 |
+| ★★ | ≥ 3.5 |
+| ★ | ≥ 2.5 |
+| — | < 2.5 |
