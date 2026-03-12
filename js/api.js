@@ -1,5 +1,3 @@
-// API module - handles all server communication
-const API_BASE = 'http://localhost:5000';
 
 /** @constant {Array} Global data storage for all stocks */
 let allData = [];
@@ -17,35 +15,35 @@ async function fetchData() {
     
     try {
         // Fetch stats first
-        const statsResponse = await fetch(`${API_BASE}/api/stats`);
+        const statsResponse = await fetch('/api/stats');
         if (!statsResponse.ok) throw new Error('Stats fetch failed');
         const statsData = await statsResponse.json();
         
         updateStatsDisplay(statsData);
         
         // Fetch all stocks data
-        const allResponse = await fetch(`${API_BASE}/api/stocks`);
+        const allResponse = await fetch('/api/stocks');
         if (allResponse.ok) {
             const allJson = await allResponse.json();
             allData = allJson.data || [];
         }
         
         // Fetch buy recommendations
-        const buyResponse = await fetch(`${API_BASE}/api/buy-recommendations`);
+        const buyResponse = await fetch('/api/buy-recommendations');
         if (buyResponse.ok) {
             const buyJson = await buyResponse.json();
             buyData = buyJson.data || [];
         }
         
         // Fetch hold recommendations
-        const holdResponse = await fetch(`${API_BASE}/api/hold-recommendations`);
+        const holdResponse = await fetch('/api/hold-recommendations');
         if (holdResponse.ok) {
             const holdJson = await holdResponse.json();
             holdData = holdJson.data || [];
         }
         
         // Fetch sell avoidance
-        const sellResponse = await fetch(`${API_BASE}/api/sell-avoidance`);
+        const sellResponse = await fetch('/api/sell-avoidance');
         if (sellResponse.ok) {
             const sellJson = await sellResponse.json();
             sellData = sellJson.data || [];
@@ -59,7 +57,7 @@ async function fetchData() {
         
     } catch (error) {
         console.error('Error fetching data:', error);
-        showError('Failed to connect to server. Make sure the server is running on http://localhost:5000');
+        showError('Failed to connect to server. Make sure the server is running.');
     } finally {
         showLoading(false);
     }
@@ -91,7 +89,7 @@ function updateStatsDisplay(statsData) {
  */
 async function fetchChartData(symbol, period = '3y') {
     try {
-        const response = await fetch(`${API_BASE}/api/stock/${symbol}/history?period=${period}`);
+        const response = await fetch(`/api/stock/${symbol}/history?period=${period}`);
         
         if (!response.ok) {
             throw new Error(`Failed to fetch chart data: ${response.status}`);
@@ -115,7 +113,7 @@ async function fetchChartData(symbol, period = '3y') {
  */
 async function triggerAnalysis() {
     try {
-        await fetch(`${API_BASE}/api/analyze`, { method: 'POST' });
+        await fetch('/api/analyze', { method: 'POST' });
         return true;
     } catch (error) {
         console.error('Error triggering analysis:', error);
