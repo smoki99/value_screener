@@ -27,6 +27,7 @@ docker run --rm -d \
     -p 5000:5000 \
     -v "$CACHE_DIR:/app/cache" \
     -e CACHE_DB_PATH="/app/cache/screener.db" \
+    -e LOG_LEVEL=INFO \
     -e FLASK_ENV=production \
     nasdaq-screener \
     bash -c "source venv/bin/activate && cd server && flask run --host=0.0.0.0 --port=5000"
@@ -35,4 +36,6 @@ echo "========================================"
 echo "Server started!"
 echo "Access at: http://localhost:5000"
 echo "Stop with: docker stop nasdaq-screener-server"
+echo "View logs with: docker logs -f nasdaq-screener-server"
+echo "Change log level by editing LOG_LEVEL in this script (DEBUG, INFO, WARNING, ERROR)"
 echo "========================================"

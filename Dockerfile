@@ -23,6 +23,11 @@ ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV FLASK_ENV=production
 
+# Logging Configuration (can be overridden at runtime)
+# LOG_LEVEL: Set to DEBUG, INFO, WARNING, ERROR, or CRITICAL
+# Default: INFO (suitable for production)
+ENV LOG_LEVEL=INFO
+
 WORKDIR /app
 
 # Install Node.js runtime (for any JS dependencies)

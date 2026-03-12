@@ -19,6 +19,10 @@ sys.path.insert(0, parent_dir)
 sys.path.insert(0, script_dir)
 
 from modules import DB_PATH, init_db
+from modules.logging_config import setup_logging, get_logger
+
+# Setup logging at module level - this must be done early
+logger = setup_logging()
 
 # Configuration for large-cap filtering
 USE_LARGECAP = os.environ.get('USE_LARGECAP', 'true').lower() == 'true'
@@ -54,7 +58,7 @@ def get_latest_cache():
             timestamp = row[1]
             return parsed_data, timestamp
     except Exception as e:
-        print(f"Error fetching latest cache: {e}")
+        logger.error("Error fetching latest cache: %s", e)
         return None, None
     return None, None
 
@@ -72,7 +76,7 @@ def init_server():
     
     # Initialize database
     db_conn = init_db(DB_PATH)
-    print(f"Database initialized: {DB_PATH}")
+    logger.info("Database initialized: %s", DB_PATH)
     
     # Check if we have cached data and when it was fetched
     try:
@@ -86,45 +90,45 @@ def init_server():
             # Parse JSON - ensure it's a list of dicts
             parsed_data = json.loads(row[0])
             cache_timestamp = row[1]
-            print(f"Found cached data from: {cache_timestamp}")
+            logger.info("Found cached data from: %s", cache_timestamp)
             
             # Validate data structure - must be list of dictionaries
             if isinstance(parsed_data, list) and len(parsed_data) > 0:
                 if isinstance(parsed_data[0], dict):
                     cached_data = parsed_data
-                    print(f"Cache contains {len(cached_data)} stocks")
+                    logger.info("Cache contains %d stocks", len(cached_data))
                     
                     # Check if older than 24 hours - auto refresh
                     last_fetch = datetime.fromisoformat(cache_timestamp)
                     age_hours = (datetime.now() - last_fetch).total_seconds() / 3600
-                    print(f"Cache age: {age_hours:.1f} hours")
+                    logger.info("Cache age: %.1f hours", age_hours)
                     
                     if age_hours > 24:
-                        print("\nData is older than 24 hours. Auto-refreshing...\n")
+                        logger.warning("Data is older than 24 hours. Auto-refreshing...")
                         run_analysis(db_conn)  # Pass the connection!
                         cached_data, cache_timestamp = get_latest_cache()  # Update globals after refresh
                     else:
-                        print(f"\nUsing cached data ({len(cached_data)} stocks).\n")
+                        logger.info("Using cached data (%d stocks)", len(cached_data))
                 else:
                     # Invalid structure - fetch fresh
-                    print("Invalid cache format (not list of dicts). Fetching fresh data...\n")
+                    logger.warning("Invalid cache format (not list of dicts). Fetching fresh data...")
                     run_analysis(db_conn)  # Pass the connection!
                     cached_data, cache_timestamp = get_latest_cache()  # Update globals after refresh
             else:
                 # Empty or invalid - fetch fresh
-                print("Empty or invalid cache. Fetching fresh data...\n")
+                logger.warning("Empty or invalid cache. Fetching fresh data...")
                 run_analysis(db_conn)  # Pass the connection!
                 cached_data, cache_timestamp = get_latest_cache()  # Update globals after refresh
         else:
             # No cached data - fetch fresh
-            print("No cached data found. Fetching fresh data...\n")
+            logger.info("No cached data found. Fetching fresh data...")
             run_analysis(db_conn)  # Pass the connection!
             cached_data, cache_timestamp = get_latest_cache()  # Update globals after refresh
     except Exception as e:
-        print(f"Error loading cache: {e}")
+        logger.error("Error loading cache: %s", e)
         import traceback
         traceback.print_exc()
-        print("Fetching fresh data...\n")
+        logger.warning("Fetching fresh data...")
         run_analysis(db_conn)  # Pass the connection!
         cached_data, cache_timestamp = get_latest_cache()  # Update globals after refresh
     
@@ -170,7 +174,7 @@ def serve_frontend():
         # Frontend.html is in parent directory, not in server/ subdirectory
         return send_file(os.path.join(parent_dir, 'frontend.html'), mimetype='text/html')
     except Exception as e:
-        print(f"Error serving frontend: {e}")
+        logger.error("Error serving frontend: %s", e)
         return jsonify({
             'error': 'Frontend not available',
             'message': str(e)
@@ -190,7 +194,7 @@ def serve_css(filename):
         # CSS files are in parent directory, not in server/ subdirectory
         return send_file(os.path.join(parent_dir, 'css', filename), mimetype='text/css')
     except Exception as e:
-        print(f"Error serving CSS {filename}: {e}")
+        logger.error("Error serving CSS %s: %s", filename, e)
         return jsonify({
             'error': 'CSS file not available',
             'message': str(e)
@@ -210,7 +214,7 @@ def serve_js(filename):
         # JS files are in parent directory, not in server/ subdirectory
         return send_file(os.path.join(parent_dir, 'js', filename), mimetype='application/javascript')
     except Exception as e:
-        print(f"Error serving JS {filename}: {e}")
+        logger.error("Error serving JS %s: %s", filename, e)
         return jsonify({
             'error': 'JavaScript file not available',
             'message': str(e)
@@ -222,23 +226,26 @@ def serve_js(filename):
 # This ensures routes are registered when flask loads the app via "flask run"
 # ============================================================================
 
-print("Initializing NASDAQ-100 Screener Server...")
+logger.info("Initializing NASDAQ-100 Screener Server...")
 init_server()
 init_endpoints(app, cached_data, cache_timestamp, db_conn)
 
-print("\n" + "=" * 60)
-print("NASDAQ-100 Screener Server")
-print("=" * 60)
-print("\nServer ready on http://localhost:5000")
-print("\nAPI Endpoints:")
-print("  GET /health                    - Health check")
-print("  GET /api/stocks                - All stock data")
-print("  GET /api/buy-recommendations   - 4-5 star stocks")
-print("  GET /api/hold-recommendations  - 3 star stocks")
-print("  GET /api/sell-avoidance        - 0-2 star stocks")
-print("  GET /api/stock/{symbol}        - Individual stock by symbol")
-print("  GET /api/stats                 - Summary statistics")
-print("  POST /api/analyze              - Trigger fresh analysis")
+logger.info("")
+logger.info("=" * 60)
+logger.info("NASDAQ-100 Screener Server")
+logger.info("=" * 60)
+logger.info("")
+logger.info("Server ready on http://localhost:5000")
+logger.info("")
+logger.info("API Endpoints:")
+logger.info("  GET /health                    - Health check")
+logger.info("  GET /api/stocks                - All stock data")
+logger.info("  GET /api/buy-recommendations   - 4-5 star stocks")
+logger.info("  GET /api/hold-recommendations  - 3 star stocks")
+logger.info("  GET /api/sell-avoidance        - 0-2 star stocks")
+logger.info("  GET /api/stock/{symbol}        - Individual stock by symbol")
+logger.info("  GET /api/stats                 - Summary statistics")
+logger.info("  POST /api/analyze              - Trigger fresh analysis")
 
 
 # ============================================================================
@@ -246,7 +253,8 @@ print("  POST /api/analyze              - Trigger fresh analysis")
 # ============================================================================
 
 if __name__ == '__main__':
-    print("\nPress Ctrl+C to stop server\n")
+    logger.info("")
+    logger.info("Press Ctrl+C to stop server")
     
     # Run Flask app with threading disabled
     from werkzeug.serving import WSGIRequestHandler
