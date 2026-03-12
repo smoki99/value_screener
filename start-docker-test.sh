@@ -1,31 +1,29 @@
 #!/bin/bash
-# NASDAQ-100 Screener - Docker Test Runner with Local Cache DB
+# NASDAQ-100 Screener - Local Docker Test Runner
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CACHE_DIR="$HOME/.nasdaq-screener-cache"
-DB_FILE="$CACHE_DIR/screener.db"
 
-# Create cache directory if it doesn't exist
+# Ensure local cache exists
 mkdir -p "$CACHE_DIR"
-touch "$DB_FILE"
-echo "Using local cache database: $DB_FILE"
 
-# Build Docker image (if not already built)
-docker build -t nasdaq-screener "$SCRIPT_DIR" > /dev/null 2>&1 || true
+echo "Building local test image..."
+docker build -t nasdaq-screener-test "$SCRIPT_DIR"
 
 echo "========================================"
 echo "Running NASDAQ-100 Screener Tests"
 echo "========================================"
-echo "Cache DB: $DB_FILE"
 
-# Run Docker container with cache volume mount and test mode
+# Run the tests inside the container
+# Note: No 'source venv' needed as deps are installed to global python site-packages
 docker run --rm \
     -v "$CACHE_DIR:/app/cache" \
     -e CACHE_DB_PATH="/app/cache/screener.db" \
-    nasdaq-screener \
-    bash -c "source venv/bin/activate && python -m pytest tests/ -v && npm test"
+    -e FLASK_ENV=testing \
+    nasdaq-screener-test \
+    bash -c "pytest tests/ -v && npm test"
 
 echo "========================================"
 echo "Tests completed!"
