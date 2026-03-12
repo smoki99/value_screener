@@ -33,16 +33,20 @@ document.getElementById('refreshBtn').addEventListener('click', async function()
     }
 });
 
-// Real-time search as you type - no button or Enter needed
+// Real-time search as you type - no button or Enter needed (debounced)
+let searchTimeout;
 document.getElementById('stockSearchInput').addEventListener('keyup', function() {
-    const searchTerm = this.value.trim().toLowerCase();
-    if (searchTerm) {
-        searchStocks(searchTerm);
-    } else {
-        // Clear results and show all data when input is empty
-        renderTable('allTableBody', allData);
-        document.getElementById('searchResultsCount').textContent = '';
-    }
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        const searchTerm = this.value.trim().toLowerCase();
+        if (searchTerm) {
+            searchStocks(searchTerm);
+        } else {
+            // Clear results and show all data when input is empty
+            renderTable('allTableBody', allData);
+            document.getElementById('searchResultsCount').textContent = '';
+        }
+    }, 300);
 });
 
 // Clear search button handler
@@ -347,8 +351,6 @@ function renderCandlestickChart(symbol, data, result) {
             throw new Error('Lightweight Charts library not loaded');
         }
         
-        console.log('Creating chart with Lightweight Charts version:', typeof LightweightCharts);
-        
         const chart = LightweightCharts.createChart(chartContainer, {
             width: chartContainer.clientWidth,
             height: 350,
@@ -380,8 +382,6 @@ function renderCandlestickChart(symbol, data, result) {
             low: d.low,
             close: d.close,
         }));
-        
-        console.log('Candle data sample:', candleData[0]);
         
         const candleSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
             upColor: '#26a69a',
@@ -458,7 +458,6 @@ function renderCandlestickChart(symbol, data, result) {
         }
         
         candlestickChart = chart;
-        console.log('Chart created successfully');
         
     } catch (error) {
         console.error('Error rendering chart:', error);
