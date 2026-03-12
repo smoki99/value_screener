@@ -16,10 +16,10 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@11bd71901bbe5b1632ce2b9c1b46180b332d6294 # v4.2.2
+        uses: actions/checkout@v4
       
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@0a5c615913736835eee5cf9b6cfe802e1d6fcf16 # v5.4.0
+        uses: actions/setup-python@v5
         with:
           python-version: '${{ matrix.python-version }}'
       
@@ -40,10 +40,10 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@11bd71901bbe5b1632ce2b9c1b46180b332d6294 # v4.2.2
+        uses: actions/checkout@v4
       
       - name: Set up Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@e76ffddcdadc26eb4f5cba3361de1581db50c6d9 # v4.4.0
+        uses: actions/setup-node@v4
         with:
           node-version: '${{ matrix.node-version }}'
           cache: 'npm'
