@@ -218,40 +218,41 @@ def serve_js(filename):
 
 
 # ============================================================================
-# MAIN
+# INITIALIZATION - Runs at import time (not just in main block)
+# This ensures routes are registered when flask loads the app via "flask run"
+# ============================================================================
+
+print("Initializing NASDAQ-100 Screener Server...")
+init_server()
+init_endpoints(app, cached_data, cache_timestamp, db_conn)
+
+print("\n" + "=" * 60)
+print("NASDAQ-100 Screener Server")
+print("=" * 60)
+print("\nServer ready on http://localhost:5000")
+print("\nAPI Endpoints:")
+print("  GET /health                    - Health check")
+print("  GET /api/stocks                - All stock data")
+print("  GET /api/buy-recommendations   - 4-5 star stocks")
+print("  GET /api/hold-recommendations  - 3 star stocks")
+print("  GET /api/sell-avoidance        - 0-2 star stocks")
+print("  GET /api/stock/{symbol}        - Individual stock by symbol")
+print("  GET /api/stats                 - Summary statistics")
+print("  POST /api/analyze              - Trigger fresh analysis")
+
+
+# ============================================================================
+# MAIN - Only runs when executed directly (python server/app.py)
 # ============================================================================
 
 if __name__ == '__main__':
-    # Initialize server (database + auto-refresh if needed)
-    init_server()
-    
-    # Now initialize endpoints with the Flask app and global variables
-    # This registers all API routes
-    init_endpoints(app, cached_data, cache_timestamp, db_conn)
-    
-    print("\n" + "=" * 60)
-    print("NASDAQ-100 Screener Server")
-    print("=" * 60)
-    print("\nServer running on http://localhost:5000")
-    print("\nAPI Endpoints:")
-    print("  GET /health                    - Health check")
-    print("  GET /api/stocks                - All stock data")
-    print("  GET /api/buy-recommendations   - 4-5 star stocks")
-    print("  GET /api/hold-recommendations  - 3 star stocks")
-    print("  GET /api/sell-avoidance        - 0-2 star stocks")
-    print("  GET /api/stock/{symbol}        - Individual stock by symbol")
-    print("  GET /api/stats                 - Summary statistics")
-    print("  POST /api/analyze              - Trigger fresh analysis")
     print("\nPress Ctrl+C to stop server\n")
     
     # Run Flask app with threading disabled
-    # This prevents "SQLite objects created in a thread can only be used in that same thread" errors
-    # because all requests will run in the main thread where db_conn was created
     from werkzeug.serving import WSGIRequestHandler
     
     class SingleThreadedWSGIRequestHandler(WSGIRequestHandler):
         def process_request(self, *args, **kwargs):
-            # Disable threading - each request runs synchronously in the main thread
             self.server = type('obj', (object,), {'threading': False})()
             super().process_request(*args, **kwargs)
     
