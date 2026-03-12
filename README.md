@@ -113,6 +113,45 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+## Quick Start
+
+### Using Startup Scripts (Recommended)
+
+**Linux/Mac:**
+```bash
+chmod +x start.sh && ./start.sh
+```
+
+**Windows:**
+- Double-click `start.bat` or run in Command Prompt:
+```cmd
+start.bat
+```
+
+The startup scripts automatically:
+1. Create virtual environment if missing
+2. Activate the environment
+3. Install dependencies from requirements.txt
+4. Start the server on http://localhost:5000
+
+### Manual Startup
+
+**Linux/Mac:**
+```bash
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python server/app.py
+```
+
+**Windows:**
+```cmd
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+python server\app.py
+```
+
 ## Usage
 
 ### Run the Web Server
@@ -239,4 +278,3 @@ This project is provided as-is for educational purposes.
 - First run may take several minutes; subsequent runs are faster due to caching
 - Web interface includes timestamp of analysis and can be opened in any modern web browser
 - SQLite database is not thread-safe, so the server runs with threading disabled for stability
-</parameter> } }</tool_call>
