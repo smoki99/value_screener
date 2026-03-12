@@ -216,3 +216,10 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Node.js / JavaScript testing
+node_modules/
+npm-debug.log*
+yarn-error.log*
+yarn.lock
+coverage/

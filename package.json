@@ -1,0 +1,12 @@
+{
+  "name": "value_screener",
+  "version": "1.0.0",
+  "description": "NASDAQ-100 Stock Screener with Web Interface",
+  "scripts": {
+    "test": "jest --verbose"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^30.3.0"
+  }
+}

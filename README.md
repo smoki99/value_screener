@@ -210,17 +210,32 @@ chmod +x test.sh && ./test.sh
 
 The test script automatically:
 1. Creates virtual environment if missing
-2. Installs dependencies and pytest
-3. Runs all tests with verbose output
+2. Installs Python dependencies and pytest
+3. Runs all Python tests with verbose output
+4. Installs Node.js dependencies (Jest) if needed
+5. Runs JavaScript unit tests
 
 **Manual Test Run:**
 ```bash
 # Install pytest if not already installed
 pip install pytest
 
-# Run all tests
+# Run all Python tests
 python -m pytest tests/
 ```
+
+**JavaScript Tests with Jest:**
+```bash
+# Install Node.js dependencies
+npm install
+
+# Run JavaScript unit tests
+npm test
+```
+
+The project includes:
+- **67 Python tests** covering core modules (cache, metrics, scoring, etc.)
+- **~10 JavaScript tests** for utility functions and table operations
 
 ## Configuration
 
